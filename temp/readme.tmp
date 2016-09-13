@@ -1,0 +1,532 @@
+------
+act_
+
+let Act = require('../model/Act'),
+    AppInfo = require('../base/AppInfo');
+
+const idRgx = /^[0-9a-f]{24}$/;
+const pageRgx = /^[1-9]+0*$/;
+const sizeRgx = /^[1-5]0?$/;
+const offsetRgx = /^[0-9]+$/;
+const orderObj = {desc: -1, asc: 1};
+const authorRgx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const trimRgx = /(^\s+)|(\s+$)/g;
+const dayRgx = /^\d{4}\-\d{1,2}\-\d{1,2}$/;
+const monRgx = /^\d{4}\-\d{1,2}$/;
+const sortbyRgx = /date|loved/;
+const hasFiledRgx =/^[01]$/
+
+class act {
+  constructor() {}
+  * queryOne () {
+    //:id?post=1/0
+    let id = this.params.id;
+    let zeroOrOne = -1;
+    for (var field in this.query) {
+      if (!Act.schema.paths.hasOwnProperty(field)) {
+        this.body = AppInfo.EorGen('wrong field: ' + field);
+        return;
+      }
+      if(!hasFiledRgx.test(this.query[field])){
+        this.body = AppInfo.EorGen('wrong field:' + field +
+          ' param:' + this.query[field]);
+        return;
+      } else {
+        if (zeroOrOne == -1) {
+          zeroOrOne = this.query[field];
+        }
+        if (this.query[field] != zeroOrOne) {
+          this.body = AppInfo.EorGen('field:' + field +
+            ' should be:' + zeroOrOne);
+          return;
+        } else {
+          this.query[field] = Number(zeroOrOne);
+        }
+      }
+    }
+    if(idRgx.test(id)){
+      let result;
+      if (this.query) {
+        result = yield Act.findOne({'_id': id}, this.query);
+      } else {
+        result = yield Act.findOne({'_id': id});
+      }
+      if (result) {
+        this.body = result;
+      } else {
+        this.body = AppInfo.NOFOUND;
+      }
+    }else {
+      this.body = AppInfo.WRONGID;
+    }
+  }
+  * queryPage () {
+    //?page=&size=&offset=&sortby=&order=asc
+    let {page, size, offset, sortby, order} = this.query;
+    page = pageRgx.test(page) ? Number(page) : 1;
+    size = sizeRgx.test(size) ? Number(size) : 10;
+    offset = offsetRgx.test(offset) ? Number(offset) : 0;
+    order = order in orderObj ? order : 'asc';
+    let execute = Act.find()
+                  .skip(offset + (page - 1) * size)
+                  .limit(size);
+    if(typeof sortby == 'string'){
+      let sort = {};
+      sort[sortby] = orderObj[order];
+      execute.sort(sort);
+    }
+    let result = yield execute.exec();
+    if(result){
+      this.body = result;
+    } else {
+      this.body = AppInfo.NOFOUND;
+    }
+  }
+  * add () {
+    let entity = this.request.body.fields;
+    let {author, title, post, actday, tags, site} = entity;
+    if (authorRgx.length > 64 || !authorRgx.test(author)) {
+      this.body = AppInfo.EorGen('author is wrong');
+      return;
+    }
+    if(title.length > 128 || trimRgx.test(title)){
+      this.body = AppInfo.EorGen('title is wrong');
+      return;
+    }
+    if(trimRgx.test(post)){
+      this.body = AppInfo.EorGen('post is wrong');
+      return;
+    }
+    if(!dayRgx.test(actday.toString())){
+      this.body = AppInfo.EorGen('actday is wrong');
+      return;
+    }
+    if (!(tags && tags instanceof Array)) {
+      this.body = AppInfo.EorGen('tags is wrong');
+      return;
+    } else {
+      for (let tag in tags) {
+        if (trimRgx.test(tags[tag])) {
+          this.body = AppInfo.EorGen('tags is wrong');
+          return;
+        }
+      }
+    }
+    if(site.length > 128 || trimRgx.test(site)){
+      this.body = AppInfo.EorGen('site is wrong');
+      return;
+    }
+    let actEntity = new Act(entity);
+    let result = yield actEntity.save();
+    if (result) {
+      this.body = AppInfo.MsgGen('save ok!');
+    } else {
+      this.body = AppInfo.EorGen('something wrong!');
+    }
+  }
+
+  * incFavor () {
+    //:id/favor
+    let id = this.params.id
+    if(idRgx.test(id)){
+      let raw = yield Act.update({_id: id}, {$inc: {loved: 1}});
+      if (raw) {
+        this.body = AppInfo.MsgGen('incrase loved ok! raw: ' + raw);
+      } else {
+        this.body = AppInfo.EorGen('something wrong!');
+      }
+    } else {
+      this.body = AppInfo.WRONGID;
+    }
+  }
+  * queryMonHot () {
+    //:mon?de=&to=
+    //此月内每天第一热度的数据
+    let mon = this.params.mon;
+    let {de, to} = this.query;
+    if(monRgx.test(mon) && dayRgx.test(de) && dayRgx.test(to)){
+      // mon = mon + '-01';
+      // let monDate = new Date(mon);
+      let nowDate = new Date();
+      let nowYear = nowDate.getFullYear();
+      let nowMon = nowDate.getMonth();
+      // if(nowYear === monDate.getFullYear() && nowMon === monDate.getMonth()){
+      let deDate = new Date(de);
+      let toDate = new Date(to);
+      let deYear = deDate.getFullYear();
+      let deMon = deDate.getMonth();
+      let toYear = toDate.getFullYear();
+      let toMon = toDate.getMonth();
+      if (nowMon - deMon > 1 || toMon - nowMon > 1) {
+        if (nowMon != 1 && nowYear - deYear > 1) {
+          this.body = AppInfo.EorGen('de or to month wrong');
+          return;
+        }
+        if (nowMon != 12 && toYear - nowYear > 1) {
+          this.body = AppInfo.EorGen('de or to year wrong');
+          return;
+        }
+      } else if (nowMon - deMon < 0 || toMon - nowMon < 0) {
+        this.body = AppInfo.EorGen('de or to month wrong');
+        return;
+      }
+      if (toDate - deDate > 3542400000) {
+        this.body = AppInfo.EorGen('de span to too long');
+        return;
+      }
+
+      //$first:"$$ROOT"
+      let execute = Act.aggregate([
+        {$match: {"actday": {$gte: new Date(de), $lte: new Date(to)}}},
+        {$sort: {loved: -1}},
+        {$group: {_id: "$actday", id: {$first: "$_id"}, title: {$first: "$title"}, icon: {$first: "$icon"}, loved: {$first: "$loved"}}},
+        {$project: {_id: "$id", actday: "$_id", title: "$title", icon: "$icon", loved: "$loved"}}
+      ]);
+      let result = yield execute.exec();
+      if(result){
+        this.body = result;
+      } else {
+        this.body = AppInfo.NOFOUND;
+      }
+      // } else {
+      //   this.body = 'mon year or month wrong';
+      // }
+    } else {
+      this.body = AppInfo.EorGen('date style wrong');
+    }
+  }
+  * queryDayPage () {
+    //:day?page=&size=&offset=&sortby=&order=asc
+    // 这天的最新/最热数据分页查询
+    let day = this.params.day;
+    if (!dayRgx.test(day)) {
+      this.body = AppInfo.EorGen('date style wrong');
+      return;
+    }
+    let {page, size, offset, sortby, order} = this.query;
+    page = pageRgx.test(page) ? Number(page) : 1;
+    size = sizeRgx.test(size) ? Number(size) : 10;
+    offset = offsetRgx.test(offset) ? Number(offset) : 0;
+    sortby = sortbyRgx.test(sortby) ? sortby : 'loved';
+    order = order in orderObj ? order : 'asc';
+    let sort = {};
+    sort[sortby] = orderObj[order];
+    let execute = Act.find({"actday": {$eq: new Date(day)}}, {
+                    post: 0
+                  })
+                  .skip(offset + (page - 1) * size)
+                  .limit(size)
+                  .sort(sort);
+    let result = yield execute.exec();
+    if(result){
+      this.body = result;
+    } else {
+      this.body = AppInfo.NOFOUND;
+    }
+  }
+}
+
+module.exports = new act();
+
+
+
+
+
+
+------
+index_
+
+let act = require('./act');
+
+let route = function (router) {
+  router.get('/acts/:id', act.queryOne);
+  router.get('/acts', act.queryPage);
+  router.get('/acts/mon/:mon', act.queryMonHot);
+  router.get('/acts/day/:day', act.queryDayPage);
+  router.put('/acts/:id/loved', act.incLoved);
+  router.post('/acts', act.add);
+}
+
+module.exports = route;
+
+------
+scheme custom
+
+pathToRegexp = require('path-to-regexp'),
+flatten = require('flat').flatten,
+methods = require('methods');
+
+if (Object.prototype.toString.call(allscheme) !== '[object Object]') {
+  throw new Error('No scheme.');
+}
+let tconf = {};
+let pathReg = new RegExp('(' + methods.join('|') + ')\\S*\\s+\/', 'i');
+Object.keys(allscheme).forEach(function(path) {
+  if (pathReg.test(path)) {
+    tconf[path] = allscheme[path];
+  } else {
+    tconf[((allscheme[path].request || {}).method || '(.+)') + ' ' + path] = allscheme[path];
+  }
+});
+
+Object.keys(tconf).forEach(function (path) {
+  if (tconf[path].request) {
+    tconf[path].request = flatten(tconf[path].request, {safe: true});
+  }
+  if (tconf[path].response) {
+    tconf[path].response = flatten(tconf[path].response, {safe: true});
+  }
+});
+
+let scheme = function* (next) {
+  let ctx = this;
+  let matchArr = [];
+  let ctxPath = ctx.method + ' ' + ctx.path;
+  Object.keys(tconf).forEach(function (path) {
+    if (pathToRegexp(path).test(ctxPath)) {
+      matchArr.push(tconf[path]);
+    }
+  });
+
+  matchArr.forEach(function (rule) {
+    let flatConfRequest = rule.request || {};
+    let flatCtxRequest = flatten(filterFunc(ctx.request), {safe: true});
+    Object.keys(flatConfRequest).forEach(function (key) {
+      if ('function' === typeof flatConfRequest[key]) {
+        try {
+          if (!flatConfRequest[key].call(ctx, flatCtxRequest[key])) {
+            ctx.throw(400, JSON.stringify(flatCtxRequest[key]) + ' x [Function: ' + (flatConfRequest[key].name || 'function') + ']');
+          }
+        } catch (e) {
+          ctx.throw(e.statusCode || e.status || 400, e.message);
+        }
+      } else {
+        if (flatCtxRequest[key] === undefined) {
+          ctx.throw(400, key + ' : Not exist!');
+        }
+        if (!RegExp(flatConfRequest[key]).test(flatCtxRequest[key])) {
+          ctx.throw(400, key + ' : ' + flatCtxRequest[key] + ' x ' + flatConfRequest[key]);
+        }
+      }
+    });
+  });
+
+  if (this.status === 404) {
+    yield* next;
+    matchArr.forEach(function (rule) {
+      let flatConfResponse = rule.response || {};
+      let flatCtxResponse = flatten(filterFunc(ctx.response), {safe: true});
+      Object.keys(flatConfResponse).forEach(function (key) {
+        if ('function' === typeof flatConfResponse[key]) {
+          try {
+            if (!flatConfResponse[key].call(ctx, flatCtxResponse[key])) {
+              ctx.throw(500, JSON.stringify(flatCtxResponse[key]) + ' x [Function: ' + (flatConfResponse[key].name || 'function') + ']');
+            }
+          } catch (e) {
+            ctx.throw(e.statusCode || e.status || 500, e.message);
+          }
+        } else {
+          if (flatCtxResponse[key] === undefined) {
+            ctx.throw(500, key + ' : Not exist!');
+          }
+          if (!RegExp(flatConfResponse[key]).test(flatCtxResponse[key])) {
+            ctx.throw(500, key + ' : ' + flatCtxResponse[key] + ' x ' + flatConfResponse[key]);
+          }
+        }
+      });
+    });
+  }
+};
+
+function filterFunc(ctx) {
+  let tctx = {};
+  ["header", "headers", "method", "url", "originalUrl", "path", "query",
+  "querystring", "host", "hostname", "fresh", "stale",
+  "protocol", "secure", "ip", "ips", "subdomains",
+  "body", "status", "message", "length", "type", "headerSent"].forEach(function (item) {
+    if (ctx[item]) tctx[item] = ctx[item];
+  });
+  return tctx;
+}
+
+
+
+
+let router = require('koa-router')(),
+    all = require('require-all'),
+    scheme = require('koa-scheme');;
+
+let allroutes = all({
+  dirname: __dirname,
+  filter: /^(?!index)(.+)\.js$/,
+  recursive: true
+});
+
+module.exports = function (app) {
+  let allscheme = {};
+  for (let routeindex in allroutes) {
+    let route = allroutes[routeindex];
+    Object.assign(allscheme, route);
+    for (let key in route) {
+      let ks = key.split(' ');
+      let httpMethod = [];
+      if (ks.length > 0) {
+        if (ks.length == 1) {
+          httpMethod.push("get");
+        } else {
+          let multiMethod = ks[0].split("|");
+          if (multiMethod.length > 1) {
+            let eachks = ks[0];
+            multiMethod = eachks.substring(1, eachks.length - 1);
+            httpMethod.push(multiMethod.split("|"));
+          } else {
+            httpMethod.push(multiMethod[0]);
+          }
+        }
+        let pathRoute = route[key];
+        let path = ks.pop();
+        if (pathRoute["process"]) {
+          router.register(path, httpMethod, pathRoute["process"]);
+        }
+        if (pathRoute["serve"]) {
+          router.register(path, httpMethod, pathRoute["serve"]);
+        }
+      }
+    }
+  }
+  app.use(scheme(allscheme));
+  return router;
+};
+
+
+
+
+
+
+let router = require('koa-router')(),
+    all = require('require-all');
+
+let allroutes = all({
+  dirname: __dirname,
+  filter: /^(?!index)(.+)\.js$/,
+  recursive: true
+});
+
+module.exports = function (app) {
+  for (let routeindex in allroutes) {
+    let route = allroutes[routeindex];
+    let routeProcess, routeServe;
+    if (route["process"]) {
+      routeProcess = route["process"];
+    } else if (route["serve"]) {
+      routeServe = route["serve"];
+    } else {
+      throw routeindex + "should have process or serve";
+    }
+    if (route["routes"] && route["routes"] instanceof Array) {
+      let processFns = [];
+      let serveFns = [];
+      let processKeys = Object.keys(routeProcess);
+      let serveKeys = Object.keys(routeServe);
+      for (let i = 0; i < processKeys.length; i++) {
+        if (typeof routeProcess[processKeys[i]] === "function") {
+          processFns.push(processKeys[i]);
+        }
+      }
+      for (let i = 0; i < serveKeys.length; i++) {
+        if (typeof routeServe[serveKeys[i]] === "function") {
+          serveFns.push(serveKeys[i]);
+        }
+      }
+      let routes = route["routes"];
+      for (let i = 0; i < routes.length; i++) {
+        if (routes[i] && typeof routes[i] === "string") {
+          let {httpMethod, path} = splitToPathAndHttpMethod(routes[i]);
+          if (httpMethod.length < 1 || !path) continue;
+          if (processFns.length > 0) {
+            router.register(path, httpMethod, routeProcess[processFns[i]]);
+          }
+          if (serveFns.length > 0) {
+            router.register(path, httpMethod, routeServe[serveFns[i]]);
+          }
+        }
+      }
+    }
+    let attach = route["attach"];
+    if (attach && typeof attach === "object") {
+      for (let key in attach) {
+        let {httpMethod, path} = splitToPathAndHttpMethod(key);
+        if (typeof attach[key] === "string") {
+          if (routeProcess[attach[key]] && typeof routeProcess[attach[key]] === "function") {
+            router.register(path, httpMethod, routeProcess[attach[key]]);
+          }
+          if (routeServe[attach[key]] && typeof routeServe[attach[key]] === "function") {
+            router.register(path, httpMethod, routeServe[attach[key]]);
+          }
+        }
+        if (typeof attach[key] === "object") {
+          let attachProcess = attach[key]["process"];
+          let attachServe = attach[key]["serve"];
+          if (attachProcess) {
+            if (typeof attachProcess === "string") {
+              if (routeProcess[attachProcess] && typeof routeProcess[attachProcess] === "function") {
+                router.register(path, httpMethod, routeProcess[attachProcess]);
+              }
+            }
+            if (typeof attachProcess === "function") {
+              router.register(path, httpMethod, attachProcess);
+            }
+          }
+          if (attachServe) {
+            if (typeof attachServe === "string") {
+              if (routeServe[attachServe] && typeof routeServe[attachServe] === "function") {
+                router.register(path, httpMethod, routeServe[attachServe]);
+              }
+            }
+            if (typeof attachServe === "function") {
+              router.register(path, httpMethod, attachServe);
+            }
+          }
+        }
+        if (typeof attach[key] === "function") {
+          router.register(path, httpMethod, attach[key]);
+        }
+      }
+    }
+  }
+  return router;
+};
+
+function splitToPathAndHttpMethod(str) {
+  let ks = str.split(' ');
+  let httpMethod = [];
+  let path;
+  if (ks.length > 0) {
+    if (ks.length == 1) {
+      httpMethod.push("get");
+      path = ks[0];
+    } else {
+      httpMethod = ks[0].split("|");
+      path = ks[1];
+    }
+  }
+  return {httpMethod: httpMethod, path: path};
+}
+
+
+
+let actServe = require('../serves').act,
+    actProcess = require('../process').act;
+
+module.exports = {
+  'process': actProcess,
+  'serve': actServe,
+  'routes': [
+    'get /acts/:id',
+    'get /acts',
+    'get /acts/day/:day',
+    'get /acts/mon/:mon',
+    'put /acts/:id/favor',
+    'post /acts'
+  ]
+};

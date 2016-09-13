@@ -1,0 +1,203 @@
+let Act = require('../models').Act,
+    actServe = require('../serves').act,
+    validator = require('validator'),
+    AppInfo = require('../utils/AppInfo'),
+    MultiPart = require('../utils/MultiPart');
+
+const idRgx = /^[0-9a-f]{24}$/;
+const pageRgx = /^[1-9]+0*$/;
+const sizeRgx = /^[1-5]0?$/;
+const offsetRgx = /^[0-9]+$/;
+const orderObj = {desc: -1, asc: 1};
+const authorRgx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const trimRgx = /(^\s+)|(\s+$)/g;
+const dayRgx = /^\d{4}\-\d{1,2}\-\d{1,2}$/;
+const monRgx = /^\d{4}\-\d{1,2}$/;
+const sortRgx = /date|favor/;
+const hasFiledRgx =/^[01]$/;
+const imgFileRgx = /\.(png|jpg)+$/;
+const imgMimeRgx = /^image\//;
+
+module.exports = class act {
+  constructor () {}
+
+  //:id?post=1/0
+  //@route(get /acts/:id)
+  * queryOne () {
+    let id = this.params.id;
+    let zeroOrOne = -1;
+    if(!idRgx.test(id)){
+      this.body = AppInfo.WRONGID;
+      return;
+    }
+    for (var field in this.query) {
+      if (!Act.schema.paths.hasOwnProperty(field)) {
+        this.body = AppInfo.ErrGen('wrong field: ' + field);
+        return;
+      }
+      if(!hasFiledRgx.test(this.query[field])){
+        this.body = AppInfo.ErrGen('wrong field:' + field +
+          ' param:' + this.query[field]);
+        return;
+      } else {
+        if (zeroOrOne == -1) {
+          zeroOrOne = this.query[field];
+        }
+        if (this.query[field] != zeroOrOne) {
+          this.body = AppInfo.ErrGen('field:' + field +
+            ' should be:' + zeroOrOne);
+          return;
+        } else {
+          this.query[field] = Number(zeroOrOne);
+        }
+      }
+    }
+    yield actServe.queryOne;
+  }
+
+  //?page=&size=&offset=&sort=&order=asc
+  //@route(get /acts)
+  * queryPage (next) {
+    let {page, size, offset, sort, order} = this.query;
+    this.query.page = pageRgx.test(page) ? Number(page) : 1;
+    this.query.size = sizeRgx.test(size) ? Number(size) : 10;
+    this.query.offset = offsetRgx.test(offset) ? Number(offset) : 0;
+    order = order in orderObj ? order : 'asc';
+    this.query.order = orderObj[order];
+    if(typeof sort == 'string'){
+      let sortObj = {};
+      sortObj[sort] = order;
+      this.query.sort = sortObj;
+    } else {
+      this.query.sort = null
+    }
+    yield actServe.queryPage;
+  }
+
+  //:mon?de=&to=
+  //此月内每天第一热度的数据
+  //@route(get /acts/mon/:mon)
+  * queryMonHot (next) {
+    let mon = this.params.mon;
+    let {de, to} = this.query;
+    if(monRgx.test(mon) && dayRgx.test(de) && dayRgx.test(to)){
+      // mon = mon + '-01';
+      // let monDate = new Date(mon);
+      let nowDate = new Date();
+      let nowYear = nowDate.getFullYear();
+      let nowMon = nowDate.getMonth();
+      // if(nowYear === monDate.getFullYear() && nowMon === monDate.getMonth()){
+      let deDate = new Date(de);
+      let toDate = new Date(to);
+      let deYear = deDate.getFullYear();
+      let deMon = deDate.getMonth();
+      let toYear = toDate.getFullYear();
+      let toMon = toDate.getMonth();
+      if (nowMon - deMon > 1 || toMon - nowMon > 1) {
+        if (nowMon != 1 && nowYear - deYear > 1) {
+          this.body = AppInfo.ErrGen('de or to month wrong');
+          return;
+        }
+        if (nowMon != 12 && toYear - nowYear > 1) {
+          this.body = AppInfo.ErrGen('de or to year wrong');
+          return;
+        }
+      } else if (nowMon - deMon < 0 || toMon - nowMon < 0) {
+        this.body = AppInfo.ErrGen('de or to month wrong');
+        return;
+      }
+      if (toDate - deDate > 3542400000) {
+        this.body = AppInfo.ErrGen('de span to too long');
+        return;
+      }
+    } else {
+      this.body = AppInfo.ErrGen('date style wrong');
+      return;
+    }
+    yield actServe.queryMonHot;
+  }
+
+  //:day?page=&size=&offset=&sort=&order=asc
+  // 这天的最新/最热数据分页查询
+  //@route(get /acts/day/:day)
+  * queryDayPage (next) {
+    let day = this.params.day;
+    if (!dayRgx.test(day)) {
+      this.body = AppInfo.ErrGen('date style wrong');
+      return;
+    }
+    let {page, size, offset, sort, order} = this.query;
+    this.query.page = pageRgx.test(page) ? Number(page) : 1;
+    this.query.size = sizeRgx.test(size) ? Number(size) : 10;
+    this.query.offset = offsetRgx.test(offset) ? Number(offset) : 0;
+    sort = sortRgx.test(sort) ? sort : 'favor';
+    order = order in orderObj ? order : 'asc';
+    this.query.order = orderObj[order];
+    let sortObj = {};
+    sortObj[sort] = order;
+    this.query.sort = sortObj;
+    yield actServe.queryDayPage;
+  }
+
+  //:id/favor
+  //@route(put /acts/:id/favor)
+  * incraseFavor (next) {
+    let id = this.params.id
+    if(!idRgx.test(id)){
+      this.body = AppInfo.WRONGID;
+      return;
+    }
+    yield actServe.incraseFavor;
+  }
+
+  //@route(post /acts)
+  * addOne (next) {
+    let result = yield MultiPart({valid: addOneProcess});
+    if (result) {
+      yield actServe.addOne;
+    }
+  }
+}
+
+function addOneProcess(name, value) {
+  switch (name) {
+    case "author":
+      if (value.length > 64 || !authorRgx.test(value)) {
+        return false;
+      }
+      return true;
+    case "title":
+      if(value.length > 128 || trimRgx.test(value)){
+        return false;
+      }
+      return true;
+    case "post":
+      if(trimRgx.test(value)){
+        return false;
+      }
+      return true;
+    case "actday":
+      if(!dayRgx.test(value.toString())){
+        return false;
+      }
+      return true;
+    case "tags":
+      if (trimRgx.test(value)) {
+        return false;
+      }
+      return true;
+    case "site":
+      if(value.length > 128 || trimRgx.test(value)){
+        return false;
+      }
+      return true;
+    case "icon":
+      if(!value.filename || value.filename.length > 128 ||
+         !imgFileRgx.test(value.filename) || !imgMimeRgx.test(value.mime)){
+        return false;
+      }
+      return true;
+    default:
+      return false;
+  }
+}

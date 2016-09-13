@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Calendar</title>
+    <link rel="stylesheet" href="css/index.css" >
+    <link rel="stylesheet" href="lib/clndr/clndr.css" >
+    <script type="text/javascript" src="lib/jquery/jquery.js"></script>
+    <script type="text/javascript" src="lib/moment/moment.js"></script>
+    <script type="text/javascript" src="lib/clndr/clndr.js"></script>
+    <script type="text/javascript" src="lib/angular/angular.min.js"></script>
+  </head>
+  <body ng-app='calendarApp' ng-controller='titleCtrl'>
+    <div id="title" style="height:auto;" >
+      <a ng-click="clickBar('left')">&laquo;</a>
+      &nbsp;&nbsp;<span id = 'curMonth'>{{curMonth}}</span>&nbsp;&nbsp;
+      <a ng-click="clickBar('right')">&raquo;</a>
+    </div>
+    <div id="clndr" style="height:auto;"></div>
+    <div id="focus">
+      <span>{{focus.actday}}</span>
+      <span>{{focus.loved}}</span>
+      <span>{{focus.author}}</span>
+      <span>{{focus.site}}</span>
+      <div>{{focus.title}}</div>
+      <img ng-src="{{focus.icon}}"/>
+      <div>{{focus.post}}</div>
+      <span>{{focus.tags}}</span>
+    </div>
+    <script type="text/javascript" src="js/index.js"></script>
+  </body>
+</html>

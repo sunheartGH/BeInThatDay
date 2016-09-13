@@ -1,0 +1,103 @@
+let Act = require('../models').Act,
+    AppInfo = require('../utils/AppInfo');
+
+module.exports = class act {
+  constructor () {}
+
+  * queryOne () {
+      let id = this.params.id;
+      let result;
+      if (this.query) {
+        result = yield Act.findOne({'_id': id}, this.query);
+      } else {
+        result = yield Act.findOne({'_id': id});
+      }
+      if (result) {
+        this.body = result;
+      } else {
+        this.body = AppInfo.NOFOUND;
+      }
+  }
+
+  * queryPage () {
+    let {page, size, offset, sort, order} = this.query;
+    let execute = Act.find()
+                  .skip(offset + (page - 1) * size)
+                  .limit(size);
+    if (sort) {
+      execute.sort(sort);
+    }
+    let result = yield execute.exec();
+    if(result){
+      this.body = result;
+    } else {
+      this.body = AppInfo.NOFOUND;
+    }
+  }
+
+  * addOne () {
+    let entity = this.request.body;
+    if (entity.icon) {
+      entity.icon = entity.icon.filepath;
+    }
+    if (entity.tags) {
+      if (!entity.tags instanceof Array) {
+        let tagsArray = [];
+        tagsArray.push(entity.tags);
+        entity.tags = tagsArray;
+      }
+    }
+    let actEntity = new Act(entity);
+    let result = yield actEntity.save();
+    if (result) {
+      this.body = AppInfo.MsgGen('save ok!');
+    } else {
+      this.body = AppInfo.ErrGen('something wrong!');
+    }
+  }
+
+  * incraseFavor () {
+    let id = this.params.id
+    let raw = yield Act.update({_id: id}, {$inc: {favor: 1}});
+    if (raw) {
+      this.body = AppInfo.MsgGen('incrase favor ok! raw: ' + raw);
+    } else {
+      this.body = AppInfo.ErrGen('something wrong!');
+    }
+  }
+
+  * queryMonHot () {
+    let mon = this.params.mon;
+    let {de, to} = this.query;
+    //$first:"$$ROOT"
+    let execute = Act.aggregate([
+      {$match: {"actday": {$gte: new Date(de), $lte: new Date(to)}}},
+      {$sort: {favor: -1}},
+      {$group: {_id: "$actday", id: {$first: "$_id"}, title: {$first: "$title"}, icon: {$first: "$icon"}, favor: {$first: "$favor"}}},
+      {$project: {_id: "$id", actday: "$_id", title: "$title", icon: "$icon", favor: "$favor"}}
+    ]);
+    let result = yield execute.exec();
+    if(result){
+      this.body = result;
+    } else {
+      this.body = AppInfo.NOFOUND;
+    }
+  }
+
+  * queryDayPage () {
+    let day = this.params.day;
+    let {page, size, offset, sort, order} = this.query;
+    let execute = Act.find({"actday": {$eq: new Date(day)}}, {
+                    post: 0
+                  })
+                  .skip(offset + (page - 1) * size)
+                  .limit(size)
+                  .sort(sort);
+    let result = yield execute.exec();
+    if(result){
+      this.body = result;
+    } else {
+      this.body = AppInfo.NOFOUND;
+    }
+  }
+};
