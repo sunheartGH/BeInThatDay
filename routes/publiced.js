@@ -14,7 +14,7 @@ module.exports = class publiced {
     //查询public 日历，即所有的日历项中某月的每天最热/最新的日历项
     let {de, to} = this.query;
     if (de && to) {
-      let result = yield actServe.findActMonHot;
+      let result = yield actServe.findActMonHot(de, to);
       if (result) {
         this.body = result;
       } else {
@@ -41,7 +41,7 @@ module.exports = class publiced {
       sortObj[sort] = order;
       this.query.sort = sortObj;
 
-      let result = yield actServe.findActDayPage;
+      let result = yield actServe.findActDayPage(day, this.query);
       if (result) {
         this.body = result;
       } else {

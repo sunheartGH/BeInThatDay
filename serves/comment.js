@@ -4,18 +4,16 @@ let Comment = require("../models").Comment,
 module.exports = class comment {
   constructor () {}
 
-  * addComment () {
+  * addComment (user, sub, post) {
     //添加comment,关联sub和user
-    let {sub, post} = this.request.body;
-    let subEntity = new Comment({creater: this.session.user, post: post, sub: mongoose.Types.ObjectId(sub)});
+    let subEntity = new Comment({creater: user, sub: mongoose.Types.ObjectId(sub), post: post});
     let result = yield subEntity.save();
     return result;
   }
 
-  * findComments () {
+  * findComments (subid, query) {
     //查找sub对应的comment，并带出评论用户信息
-    let subid = this.params.id;
-    let {page, size, offset, sort, order} = this.query;
+    let {page, size, offset, sort, order} = query;
     let execute = Comment.find({"sub": {$eq: subid}}).populate({
                     path: 'creater'
                   }).skip(offset + (page - 1) * size)
@@ -25,9 +23,8 @@ module.exports = class comment {
     return result;
   }
 
-  * updateCommentLike () {
+  * updateCommentLike (commentid) {
     //评论被赞，更新赞数
-    let commentid= this.params.id;
     let result = yield Sub.update({_id: commentid}, {$inc: {'like': 1}});
     return result;
   }

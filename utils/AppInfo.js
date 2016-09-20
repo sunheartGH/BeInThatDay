@@ -1,38 +1,26 @@
-// var util = require('util');
-//
-// function BaseError(msg, name) {
-//   Error.captureStackTrace(this); //arguments.callee
-//   this.message = msg;
-//   this.name = name;
-// }
-// util.inherits(BaseError, Error);
-//
-// function WrongId(msg) {
-//   BaseError.call(this, msg, 'WrongId');
-// }
-
-function ErrGen(msg) {
-  return {error: 1, message: msg};
+//code:
+// 1xx: 参数问题
+// 2xx: 验证/权限问题
+// 3xx: 服务器问题
+function ErrGen(msg, code = 101) {
+  return {error: code, message: msg};
 }
 
 function MsgGen(msg) {
-  return {error: 0, message: msg};
+  return {message: msg};
+}
+
+let codes = {
+  PARAMWRONG: 101,
+  APPERROR: 301
 }
 
 module.exports = {
   ErrGen: ErrGen,
   MsgGen: MsgGen,
-  APPERROR: ErrGen('The App Occur Error'),
-  NOFOUND: ErrGen('Nothing Found'),
-  WRONGID: ErrGen('The Id Is Wrong')
-}
+  NOFOUND: MsgGen('Nothing Found'),
+  APPERROR: ErrGen('App Occur Error', codes.APPERROR),
+  WRONGID: ErrGen('The Id Is Wrong', codes.PARAMWRONG),
+};
 
-
-// app.use(function* (next) {
-//   try {
-//     yield next;
-//   } catch (e) {
-//     console.log(e.stack);
-//     this.body = AppInfo.APPERROR;
-//   }
-// });
+module.exports.codes = codes;

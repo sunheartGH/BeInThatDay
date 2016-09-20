@@ -13,12 +13,12 @@ module.exports = class comment {
   //@route(post /comment)
   * newComment () {
     //某user添加某sub的评论，关联user和sub
-    if (this.session.user) {
+    let user = this.session.user;
+    if (user) {
       let {sub, post} = this.request.body;
       if (sub && post) {
-        let comment = yield commentServe.addComment;
-        this.state.commentid = comment["_id"];
-        let result = yield subServe.updateSubComments;
+        let comment = yield commentServe.addComment(user, sub, post);
+        let result = yield subServe.updateSubComments(sub, comment["_id"]);
         if (result) {
           //console.log(result); >> { ok: 1, nModified: 1, n: 1 }
           this.body = "comment sub is ok";
@@ -49,7 +49,7 @@ module.exports = class comment {
       sortObj[sort] = order;
       this.query.sort = sortObj;
 
-      let result = yield commentServe.findComments;
+      let result = yield commentServe.findComments(subid, this.query);
       if (result) {
         this.body = result;
       } else {
@@ -65,7 +65,7 @@ module.exports = class comment {
     //某评论被赞
     let commentid = this.params.id;
     if (commentid) {
-      let result = yield commentServe.updateCommentLike;
+      let result = yield commentServe.updateCommentLike(commentid);
       if (result) {
         this.body = result;
       } else {

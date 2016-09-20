@@ -18,18 +18,17 @@ module.exports = class sub {
       let {title, post, actday} = this.request.body;
       if (title && post && actday) {
         //生成act
-        let result = yield actServe.addAct;
+        let result = yield actServe.addAct(this.session.user, this.request.body);
         if (result) {
-          this.state.actid = result['_id'];
           //生成sub
-          result = yield subServe.addSub;
+          let actid = result['_id'];
+          result = yield subServe.addSub(this.session.user, actid);
           if (result) {
             //更新sub的origin
-            this.state.subid = result['_id'];
-            this.state.sourceid = result['_id'];
-            result = yield actServe.setActSub;
+            let subid = result['_id']
+            result = yield actServe.setActSub(actid, subid);
             if (result) {
-              result = yield subServe.setSubSource;
+              result = yield subServe.setSubSource(subid, subid);
               if (result) {
                 //console.log(result); >> { ok: 1, nModified: 1, n: 1 }
                 this.body = "save sub and set sub source is ok";
@@ -59,7 +58,7 @@ module.exports = class sub {
     //如果act是sub原创，favor显示act的favor
     let subid = this.params.id;
     if (subid) {
-      let result = yield subServe.findSub;
+      let result = yield subServe.findSub(subid);
       if (result) {
         this.body = result;
       } else {
@@ -77,7 +76,6 @@ module.exports = class sub {
 
   //@route(put /sub/:id/favor)
   * userFavorSub () {
-    //更新用户信息，uid收藏sid sub
     //创建对应用户的sub,并关联act
     //收藏某sub，更新其favor，并更新关联的act的favor
     //先检查是否已经和act关联过
@@ -85,25 +83,24 @@ module.exports = class sub {
     if (user) {
       let subid = this.params.id;
       if (subid) {
-        this.state.subid = subid;
-        let result = yield subServe.findUserSub;
+        let result = yield subServe.findUserSub(user, subid);
         if (!result) {
           //查询被收藏sub的信息
-          let subdoc = yield subServe.findSubJust;
-          //更新被收藏sub的赞数，(先不更新原始sub的赞数like)
-          yield subServe.updateSubLike;
+          let subdoc = yield subServe.findSubJust(subid);
+          //更新被收藏sub的收藏数，(先不更新原始sub的收藏数)
+          yield subServe.updateSubFavor(subid);
 
           //更新被收藏sub关联的act收藏数
-          this.state.actid = subdoc.act;
-          yield actServe.updateActFavor;
+          yield actServe.updateActFavor(subdoc.act);
+
+          //更新用户收藏sub的favor数
+          yield userServe.updateUserFavors(user);
 
           //创建新sub
-          let newSub = yield subServe.addSub;
+          let newSub = yield subServe.addSub(user, subdoc.act);
           if (newSub) {
             //更新新建的sub的source为被收藏的sub的id
-            this.state.subid = newSub['_id'];
-            this.state.sourceid = subdoc['_id'];
-            result = yield subServe.setSubSource;
+            result = yield subServe.setSubSource(newSub['_id'], subdoc['_id']);
             if (result) {
               //console.log(result); >> { ok: 1, nModified: 1, n: 1 }
               this.body = "save sub and set sub source is ok";
@@ -132,13 +129,12 @@ module.exports = class sub {
     if (id && tag) {
       //查询对应的sub信息
       this.state.subid = id;
-      let subdoc = yield subServe.findSubJust;
-      this.state.actid = subdoc.act;
-      this.state.acttag = tag;
+      let subdoc = yield subServe.findSubJust(id);
       //查询此tag是否已添加过
-      let actTag = yield actServe.findActTag;
+      let actid = subdoc.act;
+      let actTag = yield actServe.findActTag(actid, tag);
       if (!actTag) {
-        let result = yield actServe.addActTag;
+        let result = yield actServe.addActTag(actid, tag);
         if (result) {
           this.body = "add sub tag is ok";
         } else {
@@ -159,14 +155,12 @@ module.exports = class sub {
     let {id, tag} = this.params;
     if (id && tag) {
       //查询对应的sub信息
-      this.state.subid = id;
-      let subdoc = yield subServe.findSubJust;
-      this.state.actid = subdoc.act;
-      this.state.acttag = tag;
+      let subdoc = yield subServe.findSubJust(id);
+      let actid = subdoc.act;
       //查询此tag是否已添加过
-      let actTag = yield actServe.findActTag;
-      if (actTag) {
-        let result = yield actServe.updateActTagFavor;
+      let acttag = yield actServe.findActTag(actid, tag);
+      if (acttag) {
+        let result = yield actServe.updateActTagFavor(actid, acttag);
         if (result) {
           this.body = "increase sub tag like is ok";
         } else {
@@ -187,10 +181,9 @@ module.exports = class sub {
     if (username) { //判断username格式
       let {de, to} = this.query;
       if (de && to) {
-        let user = yield userServe.findByUsername;
+        let user = yield userServe.findByUsername(username);
         if (user) {
-          this.state.userid = user['_id'];
-          let result = yield subServe.findUserMonHot;
+          let result = yield subServe.findUserMonHot(user['_id'], de, to);
           if (result) {
             this.body = result;
           } else {
@@ -212,10 +205,8 @@ module.exports = class sub {
     //查看某用户某天的日历，page查询，最热排序/最新排序
     let {username, day} = this.params;
     if (username && day) { //判断username和day的格式
-      let user = yield userServe.findByUsername;
+      let user = yield userServe.findByUsername(username);
       if (user) {
-        this.state.userid = user['_id'];
-
         let {page, size, offset, sort, order} = this.query;
         this.query.page = pageRgx.test(page) ? Number(page) : 1;
         this.query.size = sizeRgx.test(size) ? Number(size) : 10;
@@ -227,7 +218,7 @@ module.exports = class sub {
         sortObj[sort] = order;
         this.query.sort = sortObj;
 
-        let result = yield subServe.findUserDayPage;
+        let result = yield subServe.findUserDayPage(day, user['_id'], this.query);
         if (result) {
           this.body = result;
         } else {

@@ -3,15 +3,15 @@ let Act = require('../models').Act,
 
 module.exports = class act {
   constructor () {}
-  * addAct () {
-    let {title, post, actday} = this.request.body;
-    let actEntity = new Act({author:this.session.user, title: title, post: post, actday: actday}); //...this.request.body
+
+  * addAct (user, body) {
+    let {title, post, actday} = body;
+    let actEntity = new Act({author: user, title: title, post: post, actday: actday});
     let result = yield actEntity.save();
     return result;
   }
 
-  * findActMonHot () {
-    let {de, to} = this.query;
+  * findActMonHot (de, to) {
     let execute = Act.aggregate([
       {$match: {actday: {$gte: new Date(de), $lte: new Date(to)}}},
       {$sort: {favor: -1}},
@@ -22,10 +22,8 @@ module.exports = class act {
     return result;
   }
 
-  * findActDayPage () {
-    let day = this.params.day;
-    let userid = this.state.userid;
-    let {page, size, offset, sort, order} = this.query;
+  * findActDayPage (day, query) {
+    let {page, size, offset, sort, order} = query;
     let gteDay = new Date(day);
     let lteDayTmp = new Date(day);
     let lteDay = lteDayTmp.setDate(gteDay.getDate() + 1);
@@ -37,8 +35,7 @@ module.exports = class act {
     return result;
   }
 
-  * findActTag () {
-    let {actid, acttag} = this.state;
+  * findActTag (actid, acttag) {
     let execute = Act.find({_id: {$eq: actid}}).elemMatch("tags", {tag: { $eq: acttag}});
     let result = yield execute.exec();
     return result;
@@ -48,30 +45,27 @@ module.exports = class act {
     //更新Act信息，更新关联的act信息
   }
 
-  * setActSub () {
+  * setActSub (actid, subid) {
     let {actid, subid} = this.state;
     let result = yield Act.update({_id: actid}, {$set:{sub: subid}});
     return result;
   }
 
-  * updateActFavor () {
+  * updateActFavor (actid) {
     //更新sub的favor时更新相应的act的favor
-    let actid= this.state.actid;
     let result = yield Act.update({_id: actid}, {$inc: {favor: 1}});
     return result;
   }
 
 
-  * addActTag () {
+  * addActTag (actid, acttag) {
     //更新sub关联的act的tag
-    let {actid, acttag} = this.state;
     let result = yield Act.update({_id: actid},{$push: {tags: {tag: acttag}}});
     return result;
   }
 
-  * updateActTagFavor () {
+  * updateActTagFavor (actid, acttag) {
     //更新sub管理的act的tag的favor, 标签被赞
-    let {actid, acttag} = this.state;
     let result = yield Act.update({_id: actid, "tags.tag": acttag}, {$inc: {"tags.$.like": 1}});
     return result;
   }

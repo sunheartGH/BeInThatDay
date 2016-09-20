@@ -7,12 +7,13 @@ let UserSchema = new Schema({
   password: String,
   sex: String,
   email: String,
-  followed: Schema.ObjectId, //follow id 关注用户列表 {_id:id,user:id,follows:[{userid:id,date:date}]}
-  favored: Schema.ObjectId, //favor id 收藏sub列表 {_id:id,user:id,favors:[{subid:id,date:date}]}
   avatar: String, //头像
   home: String, //url 用户主页
   depict: String, //用户描述
-  tags: Array //标签，爱好，领域等
+  tags: Array, //标签，爱好，领域等
+  followed: Number, //被关注数
+  favors: Number, //收藏sub数
+  follows: Number //关注用户数
 });
 
 module.exports = mongoose.model('User', UserSchema, 'users');

@@ -1,4 +1,4 @@
-const userClass = require('./user');
+let userClass = require('./user');
 
 module.exports = class token {
   constructor () {}
@@ -10,14 +10,19 @@ module.exports = class token {
       this.body = "user has logon";
       return;
     }
-    let user = new userClass();
-    let validResult = yield user.userVerify;
-    //验证成功，设置session
-    if (validResult.valid) {
-      this.session.user = validResult.result;
-      this.body = "login is ok";
+
+    //用户登陆时验证方法，验证登陆参数，用户名/邮箱，密码(做处理)是否合法，是否有效
+    let {username, password} = this.request.body;
+    if (username && password) {
+      let result = yield userServe.findByVerify(username, password);
+      if (result) {
+        this.session.user = result["_id"];
+        this.body = "login is ok";
+      } else {
+        this.body = "username or password is wrong";
+      }
     } else {
-      this.body = validResult.result;
+      this.body = "username or password is none";
     }
   }
 

@@ -1,4 +1,5 @@
-let userServe = require('../serves').user;
+let userServe = require('../serves').user,
+    followServe = require('../serves').follow;
 
 module.exports = class user {
   constructor () {}
@@ -11,7 +12,7 @@ module.exports = class user {
     //传递{}json格式，请求头要带 Content-Type: application/json 才能解析出json数据
     let {nickname,username,password,sex,email} = this.request.body;
     if (nickname && username && password && sex && email) {
-      let result = yield userServe.addUser;
+      let result = yield userServe.addUser(this.request.body);
       if (result) {
         this.body = "register user successed!";
       } else {
@@ -19,21 +20,6 @@ module.exports = class user {
       }
     } else {
       this.body = "wrong body! please check nickname/name/password/email.";
-    }
-  }
-
-  * userVerify () {
-    //用户登陆时验证方法，验证登陆参数，用户名/邮箱，密码(做处理)是否合法，是否有效
-    let {username,password} = this.request.body;
-    if (username && password) {
-      let result = yield userServe.findByUnPw;
-      if (result) {
-        return {valid: true, result: result["_id"]};
-      } else {
-        return {valid: false, result: "username or password is wrong"};
-      }
-    } else {
-      return {valid: false, result: "username or password is none"};
     }
   }
 
@@ -57,14 +43,46 @@ module.exports = class user {
     //更新用户信息，修改用户密码
   }
 
-  //@route(put /user/follow/:fid)
+  //@route(put /user/follow/:id)
   * userFollowUser () {
-    //更新用户信息，uid用户关注fid用户，收藏某sub
+    //更新用户信息，用户关注id用户
+    let userId = this.session.user;
+    if (userId) {
+      let followId = this.params.id;
+      if (followId) {
+        let result = yield followServe.addFollow(userId, followId);
+        if (result) {
+          result = yield userServe.updateUserFollows(userId);
+          if (result) {
+            result = yield userServe.updateUserFollowed(followId);
+          } else {
+            this.body = 'update user follows has wrong';
+          }
+        } else {
+          this.body = 'follow has wrong';
+        }
+      } else {
+        this.body = "follow id is wrong";
+      }
+    } else {
+      this.body = "must be login"
+    }
   }
 
   //@route(get /user/:id)
   * queryById () {
     //获取id用户的信息
+    let userId = this.params.id;
+    if (userId) {
+      let result = yield userServe.findById(userId);
+      if (result) {
+        this.body = result;
+      } else {
+        this.body = "user can't be find"
+      }
+    } else {
+      this.body = "user id is wrong!"
+    }
   }
 
   //@route(delete /user/:id)
