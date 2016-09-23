@@ -9,41 +9,34 @@ module.exports = class user {
   * addUser (body) {
     //注册时添加用户
     let userEntity = new User(body);
-    let result = yield userEntity.save();
-    return result;
+    return yield userEntity.save();
   }
 
   * findById (userId) {
-    let result = yield User.findOne({"_id": userId});
-    return result;
+    return yield User.findOne({"_id": userId});
   }
 
   * findByVerify (username, password) {
     //查询某个用户的信息
-    let result = yield User.findOne({"username": username, "password": password});
-    return result;
+    return yield User.findOne({"username": username, "password": password});
   }
 
   * findByUsername (username) {
-    let result = yield User.findOne({"username": username});
-    return result;
+    return yield User.findOne({"username": username});
   }
 
   * updateUserFollows (userId) {
     //用户关注数
-    let result = yield User.update({_id: userId}, {$inc: {'follows': 1}});
-    return result;
+    return yield User.update({_id: userId}, {$inc: {'follows': 1}});
   }
 
   * updateUserFollowed (userId) {
     //用户被关注数
-    let result = yield User.update({_id: userId}, {$inc: {'followed': 1}});
-    return result;
+    return yield User.update({_id: userId}, {$inc: {'followed': 1}});
   }
 
   * updateUserFavors (userId) {
     //用户收藏数
-    let result = yield User.update({_id: userId}, {$inc: {'favors': 1}});
-    return result;
+    return yield User.update({_id: userId}, {$inc: {'favors': 1}});
   }
 };

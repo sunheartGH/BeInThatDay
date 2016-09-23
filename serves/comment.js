@@ -7,8 +7,7 @@ module.exports = class comment {
   * addComment (user, sub, post) {
     //添加comment,关联sub和user
     let subEntity = new Comment({creater: user, sub: mongoose.Types.ObjectId(sub), post: post});
-    let result = yield subEntity.save();
-    return result;
+    return yield subEntity.save();
   }
 
   * findComments (subid, query) {
@@ -19,13 +18,11 @@ module.exports = class comment {
                   }).skip(offset + (page - 1) * size)
                   .limit(size)
                   .sort(sort);;
-    let result = yield execute.exec();
-    return result;
+    return yield execute.exec();
   }
 
   * updateCommentLike (commentid) {
     //评论被赞，更新赞数
-    let result = yield Sub.update({_id: commentid}, {$inc: {'like': 1}});
-    return result;
+    return yield Sub.update({_id: commentid}, {$inc: {'like': 1}});
   }
 };

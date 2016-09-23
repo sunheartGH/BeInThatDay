@@ -1,32 +1,39 @@
 let router = require('koa-router')(),
     dir = require('node-dir'),
-    path = require('path');
+    path = require('path'),
+    CommentRouterPlugin = require('../utils/CommentRouterPlugin');
 module.exports = router;
 
-//匹配含有类似 ‘//route(get /a/b/:c)’ 的内容
-let reg = /\/\/.*@route\(.*\)\r\n.*[^\/]\(.*\)/g;
+//匹配含有类似
+////@route(get /a/b/:c)
+////#validate({params:{day: Date}})
+////#token({
+//// user:NOTNULL
+////})
+//的内容
+let reg = /((\/\/)|(\/\*\r\n){0,1}).*@route\(.*\)((\r\n.*\/\/.*)*|((\r\n.*)*(\*\/){1}))(\r\n.*){1}[^\/]\(.*\)/g;
 
 //所有匹配的内容
-let matchFiles = [];
+let matchComments = [];
 
 //读取所有非index.js的.js文件
-dir.readFiles(__dirname, {match: /^(?!index)(.+)\.js$/}, function(err, content, next) {
+dir.readFiles(__dirname, {match: /^(?![a-z0-9_.]*index)(.+)\.js$/}, function(err, content, next) {
   if (err) throw err;
-  let matchComments = [];
+  let fileComments = [];
   while(true) {
     let match = reg.exec(content);
     if (!match) break;
-    matchComments.push(match[0])
+    fileComments.push(match[0])
   }
   //存储匹配内容
-  matchFiles.push(matchComments);
+  matchComments.push(fileComments);
   next();
 },function(err, files){
   if (err) throw err;
   processComments(files);
 });
 
-//处理所有匹配的路由配置
+//处理所有匹配的路由和插件配置
 function processComments(files) {
   for (let i = 0; i < files.length; i++) {
     //每一个.js文件导出的exports，都转换为对象
@@ -35,35 +42,60 @@ function processComments(files) {
     if (typeof req === "function") {
       req = new req();
     }
-    let comments = matchFiles[i];
+    let comments = matchComments[i];
     for (let index in comments) {
       let comment = comments[index];
-      //获取路由内容和方法名
-      let routeAndFnName = comment.replace('\/\/@route','').split('\r\n');
-      let route = routeAndFnName[0].match(/[^\(].+[^\s\)]/);
-      let fnName = routeAndFnName[1].replace(/function|module|exports|=|\.|:|\s|\*/g,"").match(/[a-zA-Z0-9_\$]+[^\s\(]/)[0];
-      let phm = getPathHttpMethod(route[0]);
+      //替换最后一个换行为#
+      let lastEnterIndex = comment.lastIndexOf('\r\n')
+      let firstStr = comment.slice(0, lastEnterIndex);
+      let secondStr = comment.slice(lastEnterIndex);
+      comment = firstStr + '#' + secondStr;
+      let splitComments = comment.replace(/(\/\/)|(\r\n)|\s|(\/\*)|(\*\/)/g,'').split('#');
+      //取第一个为route取最后一个为function
+      let route = splitComments.shift().replace(/@route|\(|\)/g,'');
+      let routeObj = {};
+      let tmpRoute = route.slice(0, route.indexOf('/'));
+      routeObj.method = tmpRoute?tmpRoute:'get';
+      if(routeObj.method.indexOf('|')){
+        routeObj.method = routeObj.method.split('|');
+      }
+      routeObj.path = route.slice(route.indexOf('/'), route.length);
+      console.log('add router path: ' + routeObj.method + ' ' + routeObj.path);
+      let fnName = splitComments.pop().replace(/function|module|exports|=|\.|:|\s|\*/g,"").match(/[a-zA-Z0-9_\$]+[^\s\(]/)[0];
+      //解析插件信息
+      let plugins = [];
+      for (let oneIndex in splitComments) {
+        let oneComment = splitComments[oneIndex];
+        let pluginName = oneComment.slice(0, oneComment.indexOf('('));
+        let pluginContent = oneComment.slice(oneComment.indexOf('(')+1, oneComment.lastIndexOf(')'));
+        if(pluginName && pluginContent){
+          plugins.push({pluginName: pluginName, pluginContent: pluginContent});
+        }
+      }
+      let args = [];
+      if (plugins.length > 0) {
+        args.push(routeObj.path);
+        for (let plgIndex in plugins) {
+          let plugin = CommentRouterPlugin[plugins[plgIndex].pluginName];
+          if(plugin && typeof plugin === "function"){
+            console.log('add plugin: ' + plugins[plgIndex].pluginName);
+            args.push(plugin(plugins[plgIndex].pluginContent));
+          }
+        }
+        args.push(req[fnName]);
+      } else {
+        args.push(routeObj.path, req[fnName]);
+      }
       if (req[fnName] && typeof req[fnName] === "function") {
-        //注册 访问路径，http方法，执行方法
-        router.register(phm.path, phm.httpMethod, req[fnName]);
+        if(routeObj.method instanceof Array){
+          for (let methodIndex in routeObj.method) {
+            router[routeObj.method[methodIndex]](...args);
+          }
+        } else {
+          router[routeObj.method](...args);;
+        }
       }
     }
   }
-}
-
-//将类似 'httpMethod /path/pat/pa' 的字符串转成对象
-function getPathHttpMethod(str) {
-  let ks = str.split(' ');
-  let httpMethod = [];
-  let path;
-  if (ks.length > 0) {
-    if (ks.length == 1) {
-      httpMethod.push("get");
-      path = ks[0];
-    } else {
-      httpMethod = ks[0].split("|");
-      path = ks[1];
-    }
-  }
-  return {httpMethod: httpMethod, path: path};
+  console.log('router OK');
 }

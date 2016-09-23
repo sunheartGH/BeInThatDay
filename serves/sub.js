@@ -6,8 +6,7 @@ module.exports = class sub {
   * addSub (user, actid) {
     //添加sub时添加act作关联，并关联user
     let subEntity = new Sub({creater: user, act: actid});
-    let result = yield subEntity.save();
-    return result;
+    return yield subEntity.save();
   }
 
   * findSub (subid) {
@@ -21,22 +20,19 @@ module.exports = class sub {
                       limit: 5
                     }
                   });
-    let result = yield execute.exec();
-    return result;
+    return yield execute.exec();
   }
 
   * findUserSub (user, subid) {
     //查询具体的某个sub
     let execute = Sub.find({"creater": {$eq: user}, "source": {$eq: subid}});
-    let result = yield execute.exec();
-    return result;
+    return yield execute.exec();
   }
 
   * findSubJust (subid) {
     //查询具体的某个sub
     let execute = Sub.find({"_id": {$eq: subid}});
-    let result = yield execute.exec();
-    return result;
+    return yield execute.exec();
   }
 
   * findUserMonHot (userid, de, to) {
@@ -50,8 +46,7 @@ module.exports = class sub {
       {$group: {_id: "$act.actday", sub: {$first : "$$ROOT"}}},
       {$project: {_id: 0, sub: 1}}
     ]);
-    let result = yield execute.exec();
-    return result;
+    return yield execute.exec();
   }
 
   * findUserDayPage (day, userid, query) {
@@ -87,20 +82,17 @@ module.exports = class sub {
 
   * setSubSource (subid, sourceid) {
     //更新sub的origin字段数据，使其关联其他sub或自己，以此判断是否是原创
-    let result = yield Sub.update({_id: subid}, {$set:{'source': sourceid}});
-    return result;
+    return yield Sub.update({_id: subid}, {$set:{'source': sourceid}});
   }
 
   * updateSubComments (sub, commentid) {
     //更新sub关联的act的tag
-    let result = yield Sub.update({_id: sub}, {$push: {comments: commentid}});
-    return result;
+    return yield Sub.update({_id: sub}, {$push: {comments: commentid}});
   }
 
   * updateSubFavor (subid) {
     //用户收藏sub
     //更新某个sub的favor
-    let result = yield Sub.update({_id: subid}, {$inc: {'favor': 1}});
-    return result;
+    return yield Sub.update({_id: subid}, {$inc: {'favor': 1}});
   }
 };

@@ -7,8 +7,7 @@ module.exports = class act {
   * addAct (user, body) {
     let {title, post, actday} = body;
     let actEntity = new Act({author: user, title: title, post: post, actday: actday});
-    let result = yield actEntity.save();
-    return result;
+    return yield actEntity.save();
   }
 
   * findActMonHot (de, to) {
@@ -18,8 +17,7 @@ module.exports = class act {
       {$group: {_id: "$actday", sub: {$first : "$$ROOT"}}},
       {$project: {_id: 0, sub: 1}}
     ]);
-    let result = yield execute.exec();
-    return result;
+    return yield execute.exec();
   }
 
   * findActDayPage (day, query) {
@@ -31,14 +29,12 @@ module.exports = class act {
                   .skip(offset + (page - 1) * size)
                   .limit(size)
                   .sort(sort).populate("sub");
-    let result = yield execute.exec();
-    return result;
+    return yield execute.exec();
   }
 
   * findActTag (actid, acttag) {
     let execute = Act.find({_id: {$eq: actid}}).elemMatch("tags", {tag: { $eq: acttag}});
-    let result = yield execute.exec();
-    return result;
+    return yield execute.exec();
   }
 
   * updateAct () {
@@ -46,27 +42,21 @@ module.exports = class act {
   }
 
   * setActSub (actid, subid) {
-    let {actid, subid} = this.state;
-    let result = yield Act.update({_id: actid}, {$set:{sub: subid}});
-    return result;
+    return yield Act.update({_id: actid}, {$set:{sub: subid}});
   }
 
   * updateActFavor (actid) {
     //更新sub的favor时更新相应的act的favor
-    let result = yield Act.update({_id: actid}, {$inc: {favor: 1}});
-    return result;
+    return yield Act.update({_id: actid}, {$inc: {favor: 1}});
   }
-
 
   * addActTag (actid, acttag) {
     //更新sub关联的act的tag
-    let result = yield Act.update({_id: actid},{$push: {tags: {tag: acttag}}});
-    return result;
+    return yield Act.update({_id: actid},{$push: {tags: {tag: acttag}}});
   }
 
   * updateActTagFavor (actid, acttag) {
     //更新sub管理的act的tag的favor, 标签被赞
-    let result = yield Act.update({_id: actid, "tags.tag": acttag}, {$inc: {"tags.$.like": 1}});
-    return result;
+    return yield Act.update({_id: actid, "tags.tag": acttag}, {$inc: {"tags.$.like": 1}});
   }
 };

@@ -9,7 +9,16 @@ const sortRgx = /date|favor/;
 module.exports = class publiced {
   constructor () {}
 
-  //@route(get /public)
+  /*
+  @route(get /public)
+  #validate({
+    query:{
+      de: Date,
+      to: Date
+    }
+  })
+  #token({})
+  */
   * queryPublic () {
     //查询public 日历，即所有的日历项中某月的每天最热/最新的日历项
     let {de, to} = this.query;
@@ -25,7 +34,15 @@ module.exports = class publiced {
     }
   }
 
-  //@route(get /public/:day)
+  /*
+  @route(get /public/:day)
+  #validate({
+     params:{
+       day:Date
+     }
+  })
+  #token({})
+  */
   * queryPublicDay () {
     //查询public 某天的日历，page查询，最热排序/最新排序
     let day = this.params.day;

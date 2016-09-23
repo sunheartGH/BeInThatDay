@@ -2,7 +2,8 @@
 // 1xx: 参数问题
 // 2xx: 验证/权限问题
 // 3xx: 服务器问题
-function ErrGen(msg, code = 101) {
+function ErrGen(msg, code) {
+  code = code || 101;
   return {error: code, message: msg};
 }
 
