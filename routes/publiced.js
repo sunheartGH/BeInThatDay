@@ -12,10 +12,13 @@ module.exports = class publiced {
   /*
   @route(get /public)
   #validate({
-    query:{
-      de: Date,
-      to: Date
-    }
+    $type:{
+      q.de: Date,
+      q.to: Date
+    },
+    $compare:[
+      q.de - q.to > 1000
+    ]
   })
   #token({})
   */
@@ -36,16 +39,13 @@ module.exports = class publiced {
 
   /*
   @route(get /public/:day)
-  #validate({
-     params:{
-       day:Date
-     }
-  })
-  #token({})
   */
   * queryPublicDay () {
     //查询public 某天的日历，page查询，最热排序/最新排序
     let day = this.params.day;
+    console.log(day);
+    console.log(['1','2'].indexOf(day));
+    console.log(isNaN(day));
     if (day) { //判断day的格式
       let {page, size, offset, sort, order} = this.query;
       this.query.page = pageRgx.test(page) ? Number(page) : 1;

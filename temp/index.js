@@ -4,19 +4,40 @@ let router = require('koa-router')(),
     CommentRouterPlugin = require('../utils/CommentRouterPlugin');
 module.exports = router;
 
-//匹配含有类似
-////@route(get /a/b/:c)
-////#validate({params:{day: Date}})
-////#token({
-//// user:NOTNULL
-////})
+// 匹配含有类似
+/*
+@route(get /public)
+#validate({
+  $type:{
+    q.de: Date,
+    q.to: Date
+  },
+  $compare:[
+    q.de - q.to > 1000,
+    q.de > q.to
+  ]
+})
+#token({})
+*/
+//或
+// #validate({
+//   $type:{
+//     q.de: Date,
+//     q.to: Date
+//   },
+//   $compare:[
+//     q.de - q.to > 1000,
+//     q.de > q.to
+//   ]
+// })
+// #token({})
 //的内容
-let reg = /((\/\/)|(\/\*\r\n){0,1}).*@route\(.*\)((\r\n.*\/\/.*)*|((\r\n.*)*(\*\/){1}))(\r\n.*){1}[^\/]\(.*\)/g;
+let reg = /((\/\/)|(\/\*\r\n){0,1}).*@route\(.*\)((\r\n.*\/\/.*)*|((\r\n.*[^\/\*])*(\*\/){1}))(\r\n.*){1}[^\/]\(.*\)(\/\*){0}/g;
 
 //所有匹配的内容
 let matchComments = [];
 
-//读取所有非index.js的.js文件
+//读取所有非*index.js的.js文件
 dir.readFiles(__dirname, {match: /^(?![a-z0-9_.]*index)(.+)\.js$/}, function(err, content, next) {
   if (err) throw err;
   let fileComments = [];
@@ -72,6 +93,7 @@ function processComments(files) {
           plugins.push({pluginName: pluginName, pluginContent: pluginContent});
         }
       }
+      //将路径，插件，路由以顺序加入到数组中，最后用 ...[]的方式展开使用router进行注册
       let args = [];
       if (plugins.length > 0) {
         args.push(routeObj.path);

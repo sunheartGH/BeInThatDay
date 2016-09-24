@@ -1,7 +1,9 @@
  let app = require('koa')(),
     logger = require('koa-logger'),
     validate = require('koa-validate'),
-    router = require('./routes'),
+    // router = require('./routes'),
+    router = require('koa-router')(),
+    ckr = require('comment-koa-router'),
     //routerCache = require('koa-router-cache'),
     bodyparser = require('koa-bodyparser'),
     staticCache = require('koa-static-cache'),
@@ -25,6 +27,7 @@ app.use(compress());
 // app.use(render(app, config.renderConf));
 validate(app);
 // router = router(app);
+ckr(router, './routes');
 app.use(router.routes());
 app.use(router.allowedMethods());
 
