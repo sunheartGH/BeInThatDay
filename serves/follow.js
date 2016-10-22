@@ -1,13 +1,10 @@
-let Follow = require('../models').Follow,
-    mongoose = require('mongoose');
-
+const mongoose = require('mongoose');
+const Follow = mongoose.model("Follow");
 
 module.exports = class user {
   constructor () {}
 
   * addFollow (user, followid) {
     //用户关注用户，创建条目
-    let follow = new Follow({user: user, follow: mongoose.Types.ObjectId(followid)});
-    return yield follow.save();
   }
 };

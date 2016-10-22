@@ -1,5 +1,5 @@
-let userServe = require('../serves').user,
-    followServe = require('../serves').follow;
+const serves = require("../serves");
+const {user: userServe, follow: followServe} = serves;
 
 module.exports = class user {
   constructor () {}

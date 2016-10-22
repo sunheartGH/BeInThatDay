@@ -1,4 +1,3 @@
-let userClass = require('./user');
 
 module.exports = class token {
   constructor () {}
@@ -21,7 +20,7 @@ module.exports = class token {
     //验证请求用户名/邮箱，密码
     //若验证成功，生成token
     //创建jwt header {"typ": "JWT","alg": "HS256"} 取配置的签名算法
-    //创建载荷palyload sub用户邮箱userId用户id，设置过期时间，签发日期等 
+    //创建载荷palyload sub用户邮箱userId用户id，设置过期时间，签发日期等
     //base64 header
     //base64 palyload
     //以.拼接header和playload

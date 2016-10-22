@@ -1,6 +1,5 @@
-let subServe = require('../serves').sub,
-    actServe = require('../serves').act,
-    userServe = require('../serves').user;
+const serves = require("../serves");
+const {sub: subServe, act: actServe, user: userServe} = serves;
 
 const pageRgx = /^[1-9]+0*$/;
 const sizeRgx = /^[1-5]0?$/;

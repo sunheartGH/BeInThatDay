@@ -1,5 +1,5 @@
-let commentServe = require("../serves").comment,
-    subServe = require("../serves").sub;
+const serves = require("../serves");
+const {comment: commentServe, sub: subServe} = serves;
 
 const pageRgx = /^[1-9]+0*$/;
 const sizeRgx = /^[1-5]0?$/;

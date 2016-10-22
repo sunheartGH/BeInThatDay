@@ -1,5 +1,7 @@
-const actServe = require('../serves').act;
-const AppInfo = require('../utils/AppInfo.js');
+const serves = require("../serves");
+const utils = require("../utils");
+const {act: actServe} = serves;
+const {AppInfo}= utils;
 
 
 module.exports = class publiced {
