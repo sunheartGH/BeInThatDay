@@ -28,7 +28,7 @@ module.exports = class act {
     let execute = Act.find({actday: {$gte: gteDay, $lte: lteDay}})
                   .skip(offset + (page - 1) * size)
                   .limit(size)
-                  .sort(sort).populate("sub");
+                  .sort({}[sort] = order).populate("sub");
     return yield execute.exec();
   }
 

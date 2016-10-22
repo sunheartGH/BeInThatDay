@@ -16,4 +16,37 @@ let UserSchema = new Schema({
   follows: Number //关注用户数
 });
 
-module.exports = mongoose.model('User', UserSchema, 'users');
+let User = mongoose.model('User', UserSchema, 'users');
+
+UserSchema.statics.saveUser = function* (body) {
+  //注册时添加用户
+  let userEntity = new User(body);
+  return yield userEntity.save();
+}
+
+UserSchema.statics.findById = function* (userId) {
+  return yield User.findOne({"_id": userId});
+}
+
+UserSchema.statics.findByVerify = function* (username, password) {
+  //查询某个用户的信息
+  return yield User.findOne({"username": username, "password": password});
+}
+
+UserSchema.statics.findByUsername = function* (username) {
+  return yield User.findOne({"username": username});
+}
+
+UserSchema.statics.updateUserFollows = function* (userId) {
+  //用户关注数
+  return yield User.update({_id: userId}, {$inc: {'follows': 1}});}
+
+UserSchema.statics.updateUserFollowed = function* (userId) {
+  //用户被关注数
+  return yield User.update({_id: userId}, {$inc: {'followed': 1}});
+}
+
+UserSchema.statics.updateUserFavors = function* (userId) {
+  //用户收藏数
+  return yield User.update({_id: userId}, {$inc: {'favors': 1}});
+}

@@ -1,33 +1,32 @@
  let app = require('koa')(),
     logger = require('koa-logger'),
     validate = require('koa-validate'),
-    // router = require('./routes'),
     router = require('koa-router')(),
     ckr = require('comment-koa-router'),
     //routerCache = require('koa-router-cache'),
     bodyparser = require('koa-bodyparser'),
     staticCache = require('koa-static-cache'),
-    session = require('koa-generic-session'),
-    mongoStore = require('koa-generic-session-mongo'),
-    //flash = require('koa-flash'),
+    // session = require('koa-generic-session'),
+    // mongoStore = require('koa-generic-session-mongo'),
     compress = require('koa-compress'),
-    //render = require('co-ejs'),
-    config = require('config-lite');
+    config = require('config-lite'),
+    ckrPlugin = require('./utils/Plugin.js');
 
 app.use(bodyparser());
 app.use(staticCache(config.staticCacheConf));
 app.use(logger());
 app.keys = ["beinthatday"];
-app.use(session({
-  store: new mongoStore(config.mongodb)
-}));
-//app.use(flash());
+// app.use(session({
+//   store: new mongoStore(config.mongodb)
+// }));
 //app.use(routerCache(app, config.routerCacheConf));
 app.use(compress());
-// app.use(render(app, config.renderConf));
 validate(app);
-// router = router(app);
-ckr(router, './routes');
+
+//加载models
+require('./models');
+
+ckr(router, './routes', {plugin: [ckrPlugin]});
 app.use(router.routes());
 app.use(router.allowedMethods());
 

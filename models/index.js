@@ -12,8 +12,5 @@ mongoose.connect(config.url, (err) => {
 module.exports  = all({
   dirname: __dirname,
   filter: /(.+)\.js$/,
-  recursive: true,
-  map: function (name, path) {
-    return name.toString()[0].toUpperCase() + name.toString().slice(1);
-  }
+  recursive: true
 });

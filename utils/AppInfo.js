@@ -1,27 +1,42 @@
-//code:
-// 1xx: 参数问题
-// 2xx: 验证/权限问题
-// 3xx: 服务器问题
-function ErrGen(msg, code) {
-  code = code || 101;
-  return {error: code, message: msg};
+//code: 参考 https://zh.wikipedia.org/wiki/HTTP%E7%8A%B6%E6%80%81%E7%A0%81
+
+function Msg(msg, code) {
+  msg = msg || 'nothing found';
+  code = code || 404;
+  return {
+    "meta": {
+      "code": code,
+      "status": "fail",
+      "message": msg
+    }
+  };
 }
 
-function MsgGen(msg) {
-  return {message: msg};
+function AppInfo (result) {
+  return {
+    "meta": {
+      "code": 200,
+      "status": "ok",
+      "message": "success"
+    },
+    "result": result
+  };
 }
 
 let codes = {
-  PARAMWRONG: 101,
-  APPERROR: 301
+  OK: 200, //成功
+  PARAMWRONG: 400, //参数错误
+  NOTFOUND: 404, //未找到请求资源
+  APPERROR: 501 //服务器异常
 }
 
-module.exports = {
-  ErrGen: ErrGen,
-  MsgGen: MsgGen,
-  NOFOUND: MsgGen('Nothing Found'),
-  APPERROR: ErrGen('App Occur Error', codes.APPERROR),
-  WRONGID: ErrGen('The Id Is Wrong', codes.PARAMWRONG),
-};
+AppInfo.Msg = Msg;
+AppInfo.NOFOUND = Msg('nothing found', codes.NOTFOUND);
+AppInfo.APPERROR = Msg('serve occur error', codes.APPERROR);
+AppInfo.WRONGID = Msg('wrong id', codes.PARAMWRONG);
+AppInfo.WRONGPARAM = Msg('wrong params', codes.PARAMWRONG);
+
+
+module.exports = AppInfo;
 
 module.exports.codes = codes;

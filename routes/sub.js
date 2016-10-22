@@ -11,8 +11,10 @@ const sortRgx = /date|favor/;
 module.exports = class sub {
   constructor () {}
 
-  //@route(post /sub)
-  * newSub () {
+  /*
+  @route(post /sub)
+  */
+  * createSub () {
     //添加sub，记录用户，token验证，添加act和sub，并作关联
     if (this.session.user) {
       let {title, post, actday} = this.request.body;
@@ -51,7 +53,6 @@ module.exports = class sub {
       this.body = "should be logon";
     }
   }
-
   //@route(get /sub/:id)
   * querySub () {
     //查看具体的日历项，包括内容，评论，权限过滤，是否公开，好友，public等判断
