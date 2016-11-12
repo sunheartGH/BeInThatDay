@@ -1,5 +1,5 @@
-const serves = require("../serves");
-const {comment: commentServe, sub: subServe} = serves;
+const {Comment, Subject} = require('../models');
+
 
 const pageRgx = /^[1-9]+0*$/;
 const sizeRgx = /^[1-5]0?$/;
@@ -17,8 +17,8 @@ module.exports = class comment {
     if (user) {
       let {sub, post} = this.request.body;
       if (sub && post) {
-        let comment = yield commentServe.addComment(user, sub, post);
-        let result = yield subServe.updateSubComments(sub, comment["_id"]);
+        let comment = yield Comment.addComment(user, sub, post);
+        let result = yield Subject.updateSubComments(sub, comment["_id"]);
         if (result) {
           //console.log(result); >> { ok: 1, nModified: 1, n: 1 }
           this.body = "comment sub is ok";
@@ -49,7 +49,7 @@ module.exports = class comment {
       sortObj[sort] = order;
       this.query.sort = sortObj;
 
-      let result = yield commentServe.findComments(subid, this.query);
+      let result = yield Comment.findComments(subid, this.query);
       if (result) {
         this.body = result;
       } else {
@@ -65,7 +65,7 @@ module.exports = class comment {
     //某评论被赞
     let commentid = this.params.id;
     if (commentid) {
-      let result = yield commentServe.updateCommentLike(commentid);
+      let result = yield Comment.updateCommentLike(commentid);
       if (result) {
         this.body = result;
       } else {

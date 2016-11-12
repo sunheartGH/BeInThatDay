@@ -1,25 +1,27 @@
-const serves = require("../serves");
-const {user: userServe, follow: followServe} = serves;
+const {AppInfo, Codes, Schemas, Constants, Cryptos} = require('../utils');
+const {User, Relation} = require("../models");
 
 module.exports = class user {
   constructor () {}
 
   //@route(post /user)
-  * registerUser (next) {
-    //用户注册，验证是否已注册，验证用户名，邮箱，密码是否合法，密码加salt，密码md5/sha1/sha256加密
-    //注册成功进行登陆
-    //防止路由冲突和用户控制，用户名要过滤，不能为user/users,sub/subs,public/publics,act/acts,comment/comments等等
-    //传递{}json格式，请求头要带 Content-Type: application/json 才能解析出json数据
-    let {nickname,username,password,sex,email} = this.request.body;
-    if (nickname && username && password && sex && email) {
-      let result = yield userServe.addUser(this.request.body);
-      if (result) {
-        this.body = "register user successed!";
-      } else {
-        this.body = "register user failed!"
-      }
+  //#captcha()
+  * newUser () {
+    let {username, email, phone, password} = this.request.body;
+    //创建用户
+    let accounts= {username: username, email: email, phone: phone};
+    let user = yield User.findByAccount(accounts); //验证用户是否重复
+    if (user) {
+      this.body = AppInfo.Msg("account is repeat", Codes.Common.REPEAT_ACCOUNT);
+      return;
     } else {
-      this.body = "wrong body! please check nickname/name/password/email.";
+      //以账号创建
+      user = yield new User(accounts).save();
+      let enpw = Cryptos.encryptPw(password, user.id); //加密密码
+      yield User.updateSet(user.id, {password: enpw}); //更新密码
+      //重定向到获取token
+      this.status = 307;
+      this.redirect("/auth");
     }
   }
 
@@ -50,11 +52,11 @@ module.exports = class user {
     if (userId) {
       let followId = this.params.id;
       if (followId) {
-        let result = yield followServe.addFollow(userId, followId);
+        let result = yield Relation.saveRelation(userId, followId);
         if (result) {
-          result = yield userServe.updateUserFollows(userId);
+          result = yield User.updateUserFollows(userId);
           if (result) {
-            result = yield userServe.updateUserFollowed(followId);
+            result = yield User.updateUserFollowed(followId);
           } else {
             this.body = 'update user follows has wrong';
           }
@@ -74,7 +76,7 @@ module.exports = class user {
     //获取id用户的信息
     let userId = this.params.id;
     if (userId) {
-      let result = yield userServe.findById(userId);
+      let result = yield User.findById(userId);
       if (result) {
         this.body = result;
       } else {

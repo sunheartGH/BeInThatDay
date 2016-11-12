@@ -1,5 +1,4 @@
-const serves = require("../serves");
-const {sub: subServe, act: actServe, user: userServe} = serves;
+const {Subject, Activity, User} = require("../models");
 
 const pageRgx = /^[1-9]+0*$/;
 const sizeRgx = /^[1-5]0?$/;
@@ -13,23 +12,23 @@ module.exports = class sub {
   /*
   @route(post /sub)
   */
-  * createSub () {
+  * newSubject () {
     //添加sub，记录用户，token验证，添加act和sub，并作关联
     if (this.session.user) {
       let {title, post, actday} = this.request.body;
       if (title && post && actday) {
         //生成act
-        let result = yield actServe.addAct(this.session.user, this.request.body);
+        let result = yield Activity.addAct(this.session.user, this.request.body);
         if (result) {
           //生成sub
           let actid = result['_id'];
-          result = yield subServe.addSub(this.session.user, actid);
+          result = yield Subject.addSub(this.session.user, actid);
           if (result) {
             //更新sub的origin
             let subid = result['_id']
-            result = yield actServe.setActSub(actid, subid);
+            result = yield Activity.setActSub(actid, subid);
             if (result) {
-              result = yield subServe.setSubSource(subid, subid);
+              result = yield Subject.setSubSource(subid, subid);
               if (result) {
                 //console.log(result); >> { ok: 1, nModified: 1, n: 1 }
                 this.body = "save sub and set sub source is ok";
@@ -58,7 +57,7 @@ module.exports = class sub {
     //如果act是sub原创，favor显示act的favor
     let subid = this.params.id;
     if (subid) {
-      let result = yield subServe.findSub(subid);
+      let result = yield Subject.findSub(subid);
       if (result) {
         this.body = result;
       } else {
@@ -83,24 +82,24 @@ module.exports = class sub {
     if (user) {
       let subid = this.params.id;
       if (subid) {
-        let result = yield subServe.findUserSub(user, subid);
+        let result = yield Subject.findUserSub(user, subid);
         if (!result) {
           //查询被收藏sub的信息
-          let subdoc = yield subServe.findSubJust(subid);
+          let subdoc = yield Subject.findSubJust(subid);
           //更新被收藏sub的收藏数，(先不更新原始sub的收藏数)
-          yield subServe.updateSubFavor(subid);
+          yield Subject.updateSubFavor(subid);
 
           //更新被收藏sub关联的act收藏数
-          yield actServe.updateActFavor(subdoc.act);
+          yield Activity.updateActFavor(subdoc.act);
 
           //更新用户收藏sub的favor数
-          yield userServe.updateUserFavors(user);
+          yield User.updateUserFavors(user);
 
           //创建新sub
-          let newSub = yield subServe.addSub(user, subdoc.act);
+          let newSub = yield Subject.addSub(user, subdoc.act);
           if (newSub) {
             //更新新建的sub的source为被收藏的sub的id
-            result = yield subServe.setSubSource(newSub['_id'], subdoc['_id']);
+            result = yield Subject.setSubSource(newSub['_id'], subdoc['_id']);
             if (result) {
               //console.log(result); >> { ok: 1, nModified: 1, n: 1 }
               this.body = "save sub and set sub source is ok";
@@ -129,12 +128,12 @@ module.exports = class sub {
     if (id && tag) {
       //查询对应的sub信息
       this.state.subid = id;
-      let subdoc = yield subServe.findSubJust(id);
+      let subdoc = yield Subject.findSubJust(id);
       //查询此tag是否已添加过
       let actid = subdoc.act;
-      let actTag = yield actServe.findActTag(actid, tag);
+      let actTag = yield Activity.findActTag(actid, tag);
       if (!actTag) {
-        let result = yield actServe.addActTag(actid, tag);
+        let result = yield Activity.addActTag(actid, tag);
         if (result) {
           this.body = "add sub tag is ok";
         } else {
@@ -155,12 +154,12 @@ module.exports = class sub {
     let {id, tag} = this.params;
     if (id && tag) {
       //查询对应的sub信息
-      let subdoc = yield subServe.findSubJust(id);
+      let subdoc = yield Subject.findSubJust(id);
       let actid = subdoc.act;
       //查询此tag是否已添加过
-      let acttag = yield actServe.findActTag(actid, tag);
+      let acttag = yield Activity.findActTag(actid, tag);
       if (acttag) {
-        let result = yield actServe.updateActTagFavor(actid, acttag);
+        let result = yield Activity.updateActTagFavor(actid, acttag);
         if (result) {
           this.body = "increase sub tag like is ok";
         } else {
@@ -174,16 +173,16 @@ module.exports = class sub {
     }
   }
 
-  //@route(get /:username)
+  //@route(get /sub/:username)
   * queryUserSubs () {
     //查看某用户的日历，即查询某用户某月的每天最热/最新的sub
     let username = this.params.username;
     if (username) { //判断username格式
       let {de, to} = this.query;
       if (de && to) {
-        let user = yield userServe.findByUsername(username);
+        let user = yield User.findByUsername(username);
         if (user) {
-          let result = yield subServe.findUserMonHot(user['_id'], de, to);
+          let result = yield Subject.findUserMonHot(user['_id'], de, to);
           if (result) {
             this.body = result;
           } else {
@@ -200,12 +199,12 @@ module.exports = class sub {
     }
   }
 
-  //@route(get /:username/:day)
+  //@route(get /sub/:username/:day)
   * queryUserDaySubs () {
     //查看某用户某天的日历，page查询，最热排序/最新排序
     let {username, day} = this.params;
     if (username && day) { //判断username和day的格式
-      let user = yield userServe.findByUsername(username);
+      let user = yield User.findByUsername(username);
       if (user) {
         let {page, size, offset, sort, order} = this.query;
         this.query.page = pageRgx.test(page) ? Number(page) : 1;
@@ -218,7 +217,7 @@ module.exports = class sub {
         sortObj[sort] = order;
         this.query.sort = sortObj;
 
-        let result = yield subServe.findUserDayPage(day, user['_id'], this.query);
+        let result = yield Subject.findUserDayPage(day, user['_id'], this.query);
         if (result) {
           this.body = result;
         } else {
@@ -229,6 +228,61 @@ module.exports = class sub {
       }
     } else {
       this.body = "username or day wrong format";
+    }
+  }
+
+  /*
+  @route(get /public)
+  #validate({
+    $type:{
+      q.de: Date,
+      q.to: Date
+    },
+    $compare:[
+      q.de - q.to > 2592000
+    ]
+  })
+  */
+  * queryPublic () {
+    //查询public 日历，即所有的日历项中某月的每天最热/最新的日历项
+    let {de, to} = this.query;
+    let result = yield Activity.findActMonHot(de, to);
+    if (result) {
+      this.body = AppInfo(result);
+    } else {
+      this.body = AppInfo.Msg("query public acts occurs wrong", AppInfo.codes.NOTFOUND);
+    }
+  }
+
+  /*
+  @route(get /public/:day)
+  #validate({
+    $type:{
+      p.day: Date,
+      q.page: ?Number,
+      q.size: ?Number,
+      q.offset: ?Number,
+      q.sort: ?[date, favor],
+      q.order: ?[-1, 1]
+    },
+    $default:{
+      q.page: 1,
+      q.size: 10,
+      q.offset: 0,
+      q.sort: favor,
+      q.order: 1
+    }
+  })
+  */
+  * queryPublicDay () {
+    //查询public 某天的日历，page查询，最热排序/最新排序
+    let day = this.params.day;
+
+    let result = yield Activity.findActDayPage(day, this.query);
+    if (result) {
+      this.body = AppInfo(result);
+    } else {
+      this.body = AppInfo.Msg("query public day acts occurs wrong", AppInfo.codes.NOTFOUND);
     }
   }
 };

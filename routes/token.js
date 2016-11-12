@@ -1,45 +1,38 @@
+const {AppInfo, Codes, Schemas, Cryptos} = require('../utils');
+const {User} = require('../models');
+
 
 module.exports = class token {
   constructor () {}
 
-  /*
-  @route(post /token)
-  #validate({
-    $type:{
-      b.username: -b.email,
-      b.password: !Null,
-      b.access_token: Null,
-      q.access_token: Null,
-      h.x-access-token: Null
-    }
-  })
-  */
+  //@route(post /auth)
   * newToken () {
-    //先验证用户没有token
-
-    //验证请求用户名/邮箱，密码
-    //若验证成功，生成token
-    //创建jwt header {"typ": "JWT","alg": "HS256"} 取配置的签名算法
-    //创建载荷palyload sub用户邮箱userId用户id，设置过期时间，签发日期等
-    //base64 header
-    //base64 palyload
-    //以.拼接header和playload
-    //对拼接后的结果进行签名
-    //拼接签名
-    //返回签名
-    //用户登陆时验证方法，验证登陆参数，用户名/邮箱，密码(做处理)是否合法，是否有效
-    let {username, password} = this.request.body;
-    if (username && password) {
-      let result = yield userServe.findByVerify(username, password);
-      if (result) {
-        this.session.user = result["_id"];
-        this.body = "login is ok";
+    let {username, email, phone, password} = this.request.body;
+    //根据账号查找用户
+    let accounts= {username: username, email: email, phone: phone};
+    let user = yield User.findByAccount(accounts);
+    if (user && user.id) {
+      //加密密码
+      let enpw = Cryptos.encryptPw(password, user.id);
+      user = yield User.findByAccount(accounts, enpw);
+      if (user) {
+        //验证通过
+        //TODO 若用户已有token_sign数据，发送消息提示
+        //生成token
+        let token = Cryptos.buildToken(user.id);
+        //更新用户的token_sign数据
+        let ts = token.split(".");
+        //更新用户当前正在使用的token签名
+        yield User.updateSet(user.id, {token_sign: ts[ts.length - 1]});
+        //返回数据
+        this.body = AppInfo({token: token});
       } else {
-        this.body = "username or password is wrong";
+        this.body = AppInfo.Msg("account verify fail", Codes.Common.VERIFY_FAIL);
       }
     } else {
-      this.body = "username or password is none";
+      this.body = AppInfo.Msg("account parameters not found", Codes.Common.ACCOUNT_NOTFOUND);
     }
+    //将密码加密
   }
 
   //@route(get /token)

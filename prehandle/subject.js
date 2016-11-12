@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Sub = mongoose.model("Sub");
+const Subject = mongoose.model("Subject");
 
 module.exports = class sub {
   constructor () {}

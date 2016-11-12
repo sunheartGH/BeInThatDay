@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Follow = mongoose.model("Follow");
+const Relation = mongoose.model("Relation");
 
 module.exports = class user {
   constructor () {}
