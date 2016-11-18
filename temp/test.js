@@ -186,9 +186,9 @@
 // var ObjectId = require('mongoose').Types.ObjectId;
 // console.log(ObjectId.isValid('57c2f6c9dc335bd45c87a80c'));
 
-const Cryptos = require('../utils/Cryptos.js');
+// const Cryptos = require('../utils/Cryptos.js');
 // console.log(Cryptos.buildToken('57c2f6c9dc335bd45c87a80c'));
-console.log(Cryptos.parseToken('eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJiZWludGhhdGRheSIsImV4cCI6MTQ4MTMwMjI3MSwiaWF0IjoxNDc4NzEwMjcxLCJhdWQiOiI1N2MyZjZjOWRjMzM1YmQ0NWM4N2E4MGMifQ==.A67Xii33uIVvdlYTN8lpKox7IZnpxlCAFzRByqvJl5s='));
+// console.log(Cryptos.parseToken('eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJiZWludGhhdGRheSIsImV4cCI6MTQ4MTMwMjI3MSwiaWF0IjoxNDc4NzEwMjcxLCJhdWQiOiI1N2MyZjZjOWRjMzM1YmQ0NWM4N2E4MGMifQ==.A67Xii33uIVvdlYTN8lpKox7IZnpxlCAFzRByqvJl5s='));
 // console.log(Cryptos.encryptPw("123123", '57c2f6c9dc335bd45c87a80c'));
 // const moment = require('moment');
 // console.log(moment().add(1, 'months').toDate().getTime()/1000 | 0)

@@ -69,15 +69,35 @@ module.exports = class activity {
         this.body = tagsValidMsg;
         return;
       }
-      for (let i in tags) {
-        if (!Schemas.ObjectIdValid(tags[i])) {
-          this.body = AppInfo.Msg("tags element must be objectid str", Codes.Activity.TAGS_DATA);
+      for (let tag of tags) {
+        if (!Schemas.ObjectIdValid(tag)) {
+          this.body = AppInfo.Msg("tags elements must be objectid str", Codes.Activity.TAGS_DATA);
           return;
         }
       }
     }
 
     yield next;
+  }
+
+  * showActivitys (next) {
+    let validMsg = Utils.validPageTime(this.query);
+    if (validMsg) {
+      this.body = validMsg;
+      return;
+    }
+    yield next;
+  }
+
+  * showActivitysCalendar (next) {
+    let {from, until} = this.query;
+    if (validator.isDate(from) && validator.isDate(until)) {
+      this.query.from = new Date(from);
+      this.query.until = new Date(until);
+      yield next;
+    } else {
+      this.body = AppInfo.Msg("date parameter wrong", Codes.Common.DATE_WRONG);
+    }
   }
 
   * updateActivityInfo () {

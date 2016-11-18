@@ -1,5 +1,5 @@
-const {Comment, Subject} = require('../models');
-
+const {Comment, Subject, User} = require('../models');
+const {AppInfo, Codes} = require('../utils');
 
 const pageRgx = /^[1-9]+0*$/;
 const sizeRgx = /^[1-5]0?$/;
@@ -11,26 +11,43 @@ module.exports = class comment {
   constructor () {}
 
   //@route(post /comment)
+  //#token()
   * newComment () {
-    //某user添加某sub的评论，关联user和sub
-    let user = this.session.user;
-    if (user) {
-      let {sub, post} = this.request.body;
-      if (sub && post) {
-        let comment = yield Comment.addComment(user, sub, post);
-        let result = yield Subject.updateSubComments(sub, comment["_id"]);
-        if (result) {
-          //console.log(result); >> { ok: 1, nModified: 1, n: 1 }
-          this.body = "comment sub is ok";
-        } else {
-          this.body = "comment sub is wrong!";
-        }
-      } else {
-        this.body = "sub id or post can't be none";
-      }
-    } else {
-      this.body = "should be logon";
+    //添加新评论
+    let {content, under_object, under_type, reply_user} = this.request.body;
+    let comment = {
+      creater: this.state.user.id,
+      content
     }
+    if (under_type == Subject.modelName) {
+      let subject = yield Subject.findById(under_object);
+      if (subject) {
+        comment.under_type = Subject.modelName;
+        comment.under_object = subject.id;
+      }
+    }
+    if (!comment.under_type) {
+      this.body = AppInfo.Msg("under_type is wrong type", Codes.Comment.UNDER_TYPE_DATA);
+      return;
+    }
+    if (!comment.under_object) {
+      this.body = AppInfo.Msg("under_object not found", Codes.Comment.UNDER_OBJECT_FOUND);
+      return;
+    }
+    if (reply_user) {
+      let user = yield User.findById(reply_user);
+      if (user) {
+        comment.reply_user = user.id;
+      } else {
+        this.body = AppInfo.Msg("reply_user not found", Codes.Comment.REPLY_USER_FOUND);
+        return;
+      }
+    }
+    comment = yield Comment.saveDoc(comment);
+    if (comment.under_type == Subject.modelName && comment.under_object) {
+      yield Subject.updateCommentCount(comment.under_object); //更新 Subject 的评论次数
+    }
+    this.body = AppInfo({comment});
   }
 
   //@route(get /comment/sub/:id)

@@ -17,13 +17,13 @@ mongoose.connection.on('disconnected', ()  => {
 
 module.exports  = all({
   dirname: __dirname,
-  filter: /(.+)\.js$/,
+  filter: /^(?!index)(.+)\.js$/,
   recursive: true,
   resolve: function (model) {
     let schema = model.schema;
     if (schema) {
       // Duplicate the ID field.
-      schema.virtual('id').get(() => {
+      schema.virtual('id').get(function () {
         if (this && this._id){
           return this._id.toHexString();
         }

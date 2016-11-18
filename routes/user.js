@@ -9,16 +9,17 @@ module.exports = class user {
   * newUser () {
     let {username, email, phone, password} = this.request.body;
     //创建用户
-    let accounts= {username: username, email: email, phone: phone};
-    let user = yield User.findByAccount(accounts); //验证用户是否重复
+    let account= {username: username, email: email, phone: phone};
+    let user = yield User.findByAccount(account); //验证用户是否重复
     if (user) {
+      //已账号创建
       this.body = AppInfo.Msg("account is repeat", Codes.Common.REPEAT_ACCOUNT);
       return;
     } else {
-      //以账号创建
-      user = yield new User(accounts).save();
+      //添加新的用户
+      user = yield User.saveDoc(account);
       let enpw = Cryptos.encryptPw(password, user.id); //加密密码
-      yield User.updateSet(user.id, {password: enpw}); //更新密码
+      yield User.updateDoc(user.id, {password: enpw}); //更新密码
       //重定向到获取token
       this.status = 307;
       this.redirect("/auth");

@@ -35,7 +35,7 @@ app.use(compress());
 //加载models
 require("./models");
 
-ckr(router, "./routes", {plugin: [prehandle, ckrPlugins], pre: "./prehandle"});
+ckr(router, "./routes", {plugin: [prehandle, ckrPlugins], predir: "./pres"});
 app.use(router.routes());
 app.use(router.allowedMethods());
 

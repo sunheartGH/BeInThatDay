@@ -9,12 +9,12 @@ module.exports = class token {
   * newToken () {
     let {username, email, phone, password} = this.request.body;
     //根据账号查找用户
-    let accounts= {username: username, email: email, phone: phone};
-    let user = yield User.findByAccount(accounts);
+    let account= {username: username, email: email, phone: phone};
+    let user = yield User.findByAccount(account);
     if (user && user.id) {
       //加密密码
       let enpw = Cryptos.encryptPw(password, user.id);
-      user = yield User.findByAccount(accounts, enpw);
+      user = yield User.findByAccount(account, enpw);
       if (user) {
         //验证通过
         //TODO 若用户已有token_sign数据，发送消息提示
@@ -23,7 +23,7 @@ module.exports = class token {
         //更新用户的token_sign数据
         let ts = token.split(".");
         //更新用户当前正在使用的token签名
-        yield User.updateSet(user.id, {token_sign: ts[ts.length - 1]});
+        yield User.updateDoc(user.id, {token_sign: ts[ts.length - 1]});
         //返回数据
         this.body = AppInfo({token: token});
       } else {
@@ -32,7 +32,6 @@ module.exports = class token {
     } else {
       this.body = AppInfo.Msg("account parameters not found", Codes.Common.ACCOUNT_NOTFOUND);
     }
-    //将密码加密
   }
 
   //@route(get /token)

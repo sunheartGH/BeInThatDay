@@ -8,15 +8,24 @@ let LocationSchema = new Schema({
   longitude: Number,                                          //经度
   latitude: Number,                                           //纬度
   country: String,                                            //国家
+  state: String,                                              //州
+  province: String,                                           //省
   city: String,                                               //城市
   address: String,                                            //详细地址
 });
 
+let mounts = LocationSchema.statics;
 
-LocationSchema.statics.saveLocation = function* () {
-  let entity = new Location({});
-  return yield entity.save();
+mounts.saveDoc = function* (body) {
+  if (body) {
+    return yield new this(body).save();
+  }
 }
 
+mounts.findById = function* (id) {
+  if (id) {
+    return yield this.findOne({_id: id});
+  }
+}
 
 module.exports = mongoose.model('Location', LocationSchema, 'Location');

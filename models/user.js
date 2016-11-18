@@ -28,46 +28,72 @@ let UserSchema = new Schema({
   token_sign: String                                          //记录用户当前正在使用的token签名
 });
 
-UserSchema.statics.findById = function* (userid) {
-  return yield this.findOne({"_id": userid});
+let mounts = UserSchema.statics;
+
+mounts.saveDoc = function* (account) {
+  if (account) {
+    return yield new this(account).save();
+  }
 }
 
-UserSchema.statics.findByAccount = function* (accounts, pw) {
+mounts.findByAccount = function* (account, pw) {
   //查询某个用户的信息
-  if (accounts.username) {
-    accounts = {"username": accounts.username}
-  } else if (accounts.email) {
-    accounts = {"email.account": accounts.email}
-  } else if (accounts.phone) {
-    accounts = {"phone.account": accounts.phone}
+  if (account.username) {
+    account = {"username": account.username}
+  } else if (account.email) {
+    account = {"email.account": account.email}
+  } else if (account.phone) {
+    account = {"phone.account": account.phone}
   } else {
-    accounts = null;
+    account = null;
   }
-  if (accounts) {
-    if (pw) {accounts.password = pw;}
-    return yield this.findOne(accounts);
+  if (account) {
+    if (pw) {account.password = pw;}
+    return yield this.findOne(account);
   }
 }
 
-UserSchema.statics.updateSet = function* (uid, body) {
+mounts.updateDoc = function* (uid, body) {
   //用户设置更新
   return yield this.findOneAndUpdate({_id: uid}, {$set: body}, {new: true});
 }
 
-UserSchema.statics.findByUsername = function* (username) {
+mounts.findById = function* (uid) {
+  if (uid) {
+    return yield this.findOne({_id: uid});
+  }
+}
+
+mounts.updateStar = function* (user, score) {
+  let body = {
+    star_score: ((user.star_score || 0) * (user.star_count || 0) + score ) / ((user.star_count||0) + 1),
+    star_count: (user.star_count || 0) + 1
+  }
+  return yield this.findOneAndUpdate({_id: user.id}, {$set: body});
+}
+
+
+
+
+
+
+
+
+
+mounts.findByUsername = function* (username) {
   return yield this.findOne({"username": username});
 }
 
-UserSchema.statics.updateUserFollows = function* (userid) {
+mounts.updateUserFollows = function* (userid) {
   //用户关注数
   return yield this.update({_id: userid}, {$inc: {'follows': 1}});}
 
-UserSchema.statics.updateUserFollowed = function* (userid) {
+mounts.updateUserFollowed = function* (userid) {
   //用户被关注数
   return yield this.update({_id: userid}, {$inc: {'followed': 1}});
 }
 
-UserSchema.statics.updateUserFavors = function* (userid) {
+mounts.updateUserFavors = function* (userid) {
   //用户收藏数
   return yield this.update({_id: userid}, {$inc: {'favors': 1}});
 }
