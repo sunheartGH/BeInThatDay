@@ -11,8 +11,8 @@ module.exports = class tag {
     let {parent, name, depict} = this.request.body;
     let tag = {
       creater: this.state.user.id,
-      name: name,
-      depict: depict
+      name,
+      depict
     }
     let parentTag = yield Tag.findById(parent);
     if (parentTag) {
@@ -22,7 +22,7 @@ module.exports = class tag {
       return;
     }
     tag = yield Tag.saveDoc(tag);
-    this.body = AppInfo({tag: tag});
-
+    this.body = AppInfo({tag});
   }
+
 };

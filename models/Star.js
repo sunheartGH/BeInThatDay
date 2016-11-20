@@ -1,5 +1,6 @@
 let mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const Utils = require('../utils/Utils.js');
 
 let StarSchema = new Schema({
   creater: {type: Schema.ObjectId, ref: 'User'},              //创建者id
@@ -15,6 +16,16 @@ let mounts = StarSchema.statics;
 
 mounts.saveDoc = function* (body) {
   return yield new this(body).save();
+}
+
+mounts.findByTarget = function* (creater, tobject, ttype) {
+  if (creater && tobject && ttype) {
+    return yield this.findOne({
+      creater:  mongoose.Types.ObjectId(creater.toString()),
+      target_object:  mongoose.Types.ObjectId(tobject.toString()),
+      target_type: ttype
+    })
+  }
 }
 
 module.exports = mongoose.model('Star', StarSchema, 'Star');

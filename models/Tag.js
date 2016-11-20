@@ -1,5 +1,6 @@
 let mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const Utils = require('../utils/Utils.js');
 
 let TagSchema = new Schema({
   creater: {type: Schema.ObjectId, ref: 'User'},              //创建者id
@@ -20,7 +21,7 @@ mounts.saveDoc = function* (body) {
 
 mounts.findByIds = function* (ids) {
   if (ids && ids.length) {
-    return yield this.find({_id: {$in: ids}}).save();
+    return yield this.find({_id: {$in: ids}});
   }
 }
 

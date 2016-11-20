@@ -13,7 +13,7 @@
   //"koa-generic-session-mongo": "0.2.5",
   compress = require("koa-compress"),
   config = require("config-lite"),
-  prehandle = require("./prehandle"),
+  prehandle = require("./pres"),
   ckrPlugins = require("./utils/Plugins.js");
 
 

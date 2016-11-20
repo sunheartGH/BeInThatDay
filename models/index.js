@@ -19,7 +19,7 @@ module.exports  = all({
   dirname: __dirname,
   filter: /^(?!index)(.+)\.js$/,
   recursive: true,
-  resolve: function (model) {
+  resolve (model) {
     let schema = model.schema;
     if (schema) {
       // Duplicate the ID field.

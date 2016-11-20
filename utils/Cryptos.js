@@ -53,11 +53,12 @@ exports.buildToken = function (uid, body) {
   Object.assign(playload, body);
   let token = new Buffer(JSON.stringify(header)).toString("base64") + "." + new Buffer(JSON.stringify(playload)).toString("base64");
   token += "." + crypto.createHmac(alg[tokenAlg], cipher).update(token).digest("base64");
-  return token;
+  return encodeURIComponent(token);
 };
 
 exports.parseToken = function (token) {
   if (token) {
+    token = decodeURIComponent(token);
     let ts = token.split(".");
     if (ts.length == 3) {
       let header = ts[0];

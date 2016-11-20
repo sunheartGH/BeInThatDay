@@ -12,6 +12,7 @@ exports.Common = {
   REPEAT_ACCOUNT: 314, //账号参数(在数据库中)未找到
   VERIFY_FAIL: 315, //账户验证失败
   USER_NOTFOUND: 321, //用户未找到
+  USER_SELF_WRONG: 322, //用户不能对自己进行此操作
 
 
   PAGETIME_PAGE_WRONG: 361, //分页 page 参数格式/数据错误
@@ -20,6 +21,8 @@ exports.Common = {
   PAGETIME_FIRSTIME_WRONG: 364, //分页 firstime 参数格式/数据错误
 
   DATE_WRONG: 371, //日期数据错误
+
+  REPEAT_WRONG: 381, //数据重复错误，即数据不应该重复
 };
 
 const models = require('../models');
@@ -35,7 +38,7 @@ for (let key in models) {
     let paths = [];
     let schema = model.schema;
     if (schema) {
-      schema.eachPath(function(path) {
+      schema.eachPath((path) => {
         paths.push(path.toUpperCase());
       });
       mi++;

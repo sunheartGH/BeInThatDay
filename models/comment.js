@@ -1,5 +1,6 @@
 let mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const Utils = require('../utils/Utils.js');
 
 let CommentSchema = new Schema({
   creater: {type: Schema.ObjectId, ref: 'User'},              //创建者id
@@ -30,31 +31,27 @@ mounts.updateStar = function* (comment, score) {
   }
 }
 
-
-
-
-
-
-
-
-
-
-mounts.findComments = function* (subid, query) {
-  //查找sub对应的comment，并带出评论用户信息
-  let {page, size, offset, sort, order} = query;
-  let execute = Comment.find({"sub": {$eq: subid}}).populate({
-                  path: 'creater'
-                }).skip(offset + (page - 1) * size)
-                .limit(size)
-                .sort(sort);;
-  return yield execute.exec();
+mounts.findByPageUnderObject = function* (page, type, id) {
+  if (page && type && id) {
+    let query = {created_at:{}, refer_type: refname};
+    if (page.lastime) {
+      Object.assign(query.created_at, {$lt: page.lastime});
+    }
+    if (page.firstime) {
+      Object.assign(query.created_at, {$gt: page.firstime});
+    }
+    if (uid) {
+      query.creater = mongoose.Types.ObjectId(uid);
+    }
+    let populate = {
+      path: "refer_object",
+      model: refname
+    }
+    if (select) {
+      populate.select = select;
+    }
+    return yield this.find().skip(page.offset).limit(page.size).populate(populate);
+  }
 }
-
-mounts.updateCommentLike = function* (commentid) {
-  //评论被赞，更新赞数
-  return yield Sub.update({_id: commentid}, {$inc: {'like': 1}});
-}
-
-
 
 module.exports = mongoose.model('Comment', CommentSchema, 'Comment');

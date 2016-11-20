@@ -30,26 +30,4 @@ module.exports = class user {
       this.body = AppInfo.Msg("no available account", Codes.Common.NO_ACCOUNT);
     }
   }
-
-  * findById (userId) {
-  }
-
-  * findByVerify (username, password) {
-    //查询某个用户的信息
-  }
-
-  * findByUsername (username) {
-  }
-
-  * updateUserFollows (userId) {
-    //用户关注数
-  }
-
-  * updateUserFollowed (userId) {
-    //用户被关注数
-  }
-
-  * updateUserFavors (userId) {
-    //用户收藏数
-  }
 };

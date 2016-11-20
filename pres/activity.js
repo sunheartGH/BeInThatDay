@@ -1,4 +1,4 @@
-const {AppInfo, Codes, Schemas} = require('../utils');
+const {AppInfo, Codes, Schemas, Utils} = require('../utils');
 const {Activity} = require('../models');
 const validator = require('validator');
 //参数验证:
@@ -80,6 +80,10 @@ module.exports = class activity {
     yield next;
   }
 
+  * showActivity (next) {
+    yield next
+  }
+
   * showActivitys (next) {
     let validMsg = Utils.validPageTime(this.query);
     if (validMsg) {
@@ -100,25 +104,16 @@ module.exports = class activity {
     }
   }
 
-  * updateActivityInfo () {
-    //更新sub时更新act信息，如sub被收藏时更新act favor
+  * showActivityContent (next) {
+    yield next
   }
 
-  * updateActivityTag () {
-    //act添加tag
+  * favoriteActivity (next) {
+    yield next
   }
 
-  * updateActivityTagLike () {
-    //更新act tag的favor
+  * modifyActivity (next) {
+    yield next
   }
 
-  * findActivitys (next) {
-    //查询多个Acts
-    yield next;
-  }
-
-  * findActivity (next) {
-    //查询某个Acts
-    yield next;
-  }
 };

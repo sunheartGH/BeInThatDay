@@ -1,5 +1,6 @@
 let mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const Utils = require('../utils/Utils.js');
 
 let LocationSchema = new Schema({
   creater: {type: Schema.ObjectId, ref: 'User'},              //创建者id
@@ -22,9 +23,22 @@ mounts.saveDoc = function* (body) {
   }
 }
 
-mounts.findById = function* (id) {
+mounts.updateSetDoc = function* (id, doc) {
+  if (query && doc && Object.keys(doc)) {
+    doc = Utils.trimObject(doc);
+    doc.updated_at = new Date();
+    return yield this.findOneAndUpdate({_id: id}, {$set: doc}, {new: true});
+  }
+}
+
+mounts.findById = function* (id, query, select) {
   if (id) {
-    return yield this.findOne({_id: id});
+    if (query) {
+      query._id = id;
+    } else {
+      query = {_id: id};
+    }
+    return yield this.findOne(query, select);
   }
 }
 

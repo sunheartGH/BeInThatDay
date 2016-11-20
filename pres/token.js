@@ -37,4 +37,16 @@ module.exports = class token {
       this.body = AppInfo.Msg("no available account", Codes.Common.NO_ACCOUNT);
     }
   }
+
+  * showToken (next) {
+    yield next;
+  }
+
+  * modifyToken (next) {
+    yield next;
+  }
+
+  * cancelToken (next) {
+    yield next;
+  }
 };

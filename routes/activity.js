@@ -64,8 +64,25 @@ module.exports = class activity {
   * showActivity () {
     //查看某个activity
     let {subid} = this.params;
-    let subject = yield Subject.findByIdTakeRef(subid, Activity.modelName);
-    this.body = AppInfo({activity: subject});
+    //TODO 权限判断
+    let activity = yield Subject.findByIdTakeRef(subid, Activity.modelName);
+    this.body = AppInfo({activity});
+  }
+
+  //@route(get /activity/:subid/content)
+  //#token()
+  * showActivityContent () {
+    //查看某个activity
+    let {subid} = this.params;
+    //TODO 权限判断
+    let subject = yield Subject.findById(subid, {refer_type: Activity.modelName}, {refer_object: 1});
+    if (subject) {
+      let activity = yield Activity.findById(subject.refer_object, null, {content: 1});
+      this.body = AppInfo({content: activity.content});
+    } else {
+      this.body = AppInfo.Msg("id not found", Codes.Subject._ID_FOUND);
+      return;
+    }
   }
 
   //@route(get /activitys)
@@ -73,71 +90,74 @@ module.exports = class activity {
   * showActivitys () {
     //查看activity列表
     let pageObj = Utils.parsePageTime(this.query);
-    let subjects = yield Subject.findByPageTimeTakeRef(pageObj, Activity.modelName);
+    let uid = Utils.parseUserId(this.query);
+    let activitys = yield Activity.findStartTimePageOnExpose(pageObj, this.state.user.id, uid, {content: 0});
     let page = pageObj.page;
     let size = 0;
-    if (subjects && subjects.length) {
-      size = subjects.length;
+    if (activitys && activitys.length) {
+      size = activitys.length;
     } else {
-      subjects = [];
+      activitys = [];
     }
-    this.body = AppInfo({page, size, activitys: subjects});
+    this.body = AppInfo({page, size, activitys});
   }
 
   //@route(get /activitys/calendar)
   //#token()
   * showActivitysCalendar () {
     let {from, until} = this.query;
-    let subjects = yield Subject.findForActivityInterval(from, until, Activity.modelName);
-    this.body = AppInfo({activitys: subjects});
+    let uid = Utils.parseUserId(this.query);
+    let activitys = yield Activity.findStartTimeCalendarOnExpose(from, until, this.state.user.id, uid, {content: 0});
+    this.body = AppInfo({activitys});
   }
 
-  //@route(get /activitys/:daily)
+  //@route(post /activity/favorite/:subid)
   //#token()
-  * showActivitysDaily () {
-    this.body = AppInfo({activitys: []});
+  * favoriteActivity () {
+    //用户收藏/转发某activity
+    //TODO 权限判断
+    let {subid} = this.params;
+    let subject = yield Subject.findByIdTakeRef(subid, Activity.modelName);
+    subject = {
+      creater: this.state.user.id,
+      refer_type: subject.refer_type,
+      refer_object: subject.refer_object
+    }
+    subject = yield Subject.saveDoc(subject);
+    yield Subject.updateIncDoc(subid, {favorite_count: 1});
+    let activity = yield Subject.findByIdTakeRef(subject.id, Activity.modelName);
+    this.body = AppInfo({activity});
   }
 
-  //@route(get /activitys/:uid/calendar)
+  //@route(put /activity/:subid)
   //#token()
-  * showActivitysUserCalendar () {
-    let {from, until} = this.query;
-    let {uid} = this.params;
-    let subjects = yield Subject.findForActivityInterval(from, until, Activity.modelName, uid);
-    this.body = AppInfo({activitys: subjects});
+  * modifyActivity () {
+    //TODO 权限判断
+    let {subid} = this.params;
+    let {title, cover_picurl, content, site, start_time,
+      end_time, fee, tags, expose_level} = this.request.body;
+
+    let subject = yield Subject.findById(subid, Activity.modelName);
+    if (subject) {
+      yield Activity.updateSetDoc(subject.refer_object, {title, cover_picurl, content, site, start_time, end_time, fee});
+      if (tags) {
+        let tl = tags.length;
+        tags = yield Tag.findByIds(tags);
+        if (tl == tags.length) {
+          yield Activity.updatePushDoc(subject.refer_object, {tags});
+        } else {
+          this.body = AppInfo.Msg("some tag not found", Codes.Activity.TAGS_FOUND);
+          return;
+        }
+      }
+      if (expose_level) {
+        yield Subject.updateSetDoc(subid, {expose_level});
+      }
+      this.body = AppInfo({title, cover_picurl, content, site, start_time, end_time, fee, tags, expose_level});
+    } else {
+      this.body = AppInfo.Msg("id not found", Codes.Subject._ID_FOUND);
+      return;
+    }
   }
 
-  //@route(get /activitys/:uid/:daily)
-  //#token()
-  * showActivitysUserDaily () {
-    this.body = AppInfo({activitys: []});
-  }
-
-
-
-
-
-  * updateActivityInfo () {
-    //更新sub时更新act信息，如sub被收藏时更新act favor
-  }
-
-  * updateActivityTag () {
-    //act添加tag
-  }
-
-  * updateActivityTagLike () {
-    //更新act tag的favor
-  }
-
-  //@route(get /activitys)
-  * findActivitys () {
-    //查询多个Acts
-    this.body = yield Activity.findActivitys();
-  }
-
-  //@route(get /activity/:id)
-  * findActivity () {
-    //查询某个Acts
-    this.body = yield Activity.findActivityById(this.params.id);
-  }
 };

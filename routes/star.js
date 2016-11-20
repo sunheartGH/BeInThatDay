@@ -11,15 +11,19 @@ module.exports = class star {
     let {target_user, target_object, target_type, star_score} = this.request.body;
     let star = {
       creater: this.state.user.id,
-      star_score: star_score
+      star_score
     }
     let user = yield User.findById(target_user);
     if (user) {
       star.target_user = user.id;
-
       yield User.updateStar(user, star_score);
     } else {
       this.body = AppInfo.Msg("target_user not found", Codes.Star.TARGET_USER_FOUND);
+      return;
+    }
+    let target = Star.findByTarget(this.state.user.id, target_object, target_type);
+    if (target) {
+      this.body = AppInfo.Msg("target has been stared", Codes.Common.REPEAT_WRONG);
       return;
     }
     if (target_type == Subject.modelName) {
@@ -27,7 +31,6 @@ module.exports = class star {
       if (subject && subject.creater == user.id) {
         star.target_type = Subject.modelName;
         star.target_object = subject.id;
-
         yield Subject.updateStar(subject, star_score);
       }
     } else if (target_type == Comment.modelName) {
@@ -35,12 +38,11 @@ module.exports = class star {
       if (comment && comment.creater == user.id) {
         star.target_type = Comment.modelName;
         star.target_object = comment.id;
-
         yield Comment.updateStar(comment, star_score);
       }
     }
     if (!star.target_type) {
-      this.body = AppInfo.Msg("target_type is wrong type", Codes.Star.TARGET_TYPE_DATA);
+      this.body = AppInfo.Msg("target_type is not support", Codes.Star.TARGET_TYPE_DATA);
       return;
     }
     if (!star.target_object) {
@@ -48,6 +50,6 @@ module.exports = class star {
       return;
     }
     star = yield Star.saveDoc(star);
-    this.body = AppInfo({star: star});
+    this.body = AppInfo({star});
   }
 };

@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const Utils = require('../utils/Utils.js');
 
 let UserSchema = new Schema({
   username: String,                                           //用户名，可以作为账号
@@ -12,6 +13,8 @@ let UserSchema = new Schema({
     account: String,
     validate: {type: Boolean, default: false}
   },
+  created_at: {type: Date, default: Date.now},                //创建日期
+  updated_at: {type: Date, default: Date.now},                //更新日期
   nickname: String,                                           //昵称
   gender: String,                                             //性别
   avatar: String,                                             //头像
@@ -53,9 +56,12 @@ mounts.findByAccount = function* (account, pw) {
   }
 }
 
-mounts.updateDoc = function* (uid, body) {
-  //用户设置更新
-  return yield this.findOneAndUpdate({_id: uid}, {$set: body}, {new: true});
+mounts.updateSetDoc = function* (id, doc) {
+  if (id && doc && Object.keys(doc)) {
+    doc = Utils.trimObject(doc);
+    doc.updated_at = new Date();
+    return yield this.findOneAndUpdate({_id: id}, {$set:doc});
+  }
 }
 
 mounts.findById = function* (uid) {
@@ -71,32 +77,5 @@ mounts.updateStar = function* (user, score) {
   }
   return yield this.findOneAndUpdate({_id: user.id}, {$set: body});
 }
-
-
-
-
-
-
-
-
-
-mounts.findByUsername = function* (username) {
-  return yield this.findOne({"username": username});
-}
-
-mounts.updateUserFollows = function* (userid) {
-  //用户关注数
-  return yield this.update({_id: userid}, {$inc: {'follows': 1}});}
-
-mounts.updateUserFollowed = function* (userid) {
-  //用户被关注数
-  return yield this.update({_id: userid}, {$inc: {'followed': 1}});
-}
-
-mounts.updateUserFavors = function* (userid) {
-  //用户收藏数
-  return yield this.update({_id: userid}, {$inc: {'favors': 1}});
-}
-
 
 module.exports = mongoose.model('User', UserSchema, 'User');

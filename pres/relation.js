@@ -1,10 +1,26 @@
-const mongoose = require('mongoose');
-const Relation = mongoose.model("Relation");
+const {Relation} = require('../models');
+const {AppInfo, Codes, Schemas, Constants} = require('../utils');
 
-module.exports = class user {
+module.exports = class relation {
   constructor () {}
 
-  * addFollow (user, followid) {
-    //用户关注用户，创建条目
+  * newRelation (next) {
+    let {relate_user, relate_type} = this.request.body;
+    let validMsg = Schemas.ValidType(`relate_user, relate_type`,
+      Relation, this.request.body);
+
+    if (validMsg) {
+      this.body = validMsg;
+      return;
+    }
+    if (!Constants.RelateType[relate_type]) {
+      this.body = AppInfo.Msg("relate_type wrong data", Codes.Relation.RELATE_TYPE_DATA);
+      return;
+    }
+    if (relate_user == this.state.user.id.toString()) {
+      this.body = AppInfo.Msg("self operate wrong", Codes.Common.USER_SELF_WRONG);
+      return;
+    }
+    yield next;
   }
 };
