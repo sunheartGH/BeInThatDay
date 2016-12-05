@@ -17,17 +17,9 @@ export default {
   activated() {
     this.userId = this.$route.params.userId;
   },
-  mounted() {
-    // this.showUser = 'User';
-  },
   components: {
     User
   }
-  // components: {
-  //   User (resolve) {
-  //     require(['../components/user.vue'], resolve);
-  //   }
-  // }
 }
 </script>
 

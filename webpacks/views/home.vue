@@ -31,25 +31,12 @@ export default {
     bus.$on('activityclick', (activityId) => {
       this.$router.push({ name: 'show', params: { activityId }});
     });
-    // this.showCalendar = 'Calendar';
-    // this.showLogin = 'Login';
   },
   components: {
     Login,
     Calendar,
     Activitys
   }
-  // components: {
-  //   Login (resolve) {
-  //     require(['../components/login.vue'], resolve)
-  //   },
-  //   Calendar (resolve) {
-  //     require(['../components/calendar.vue'], resolve)
-  //   },
-  //   Activitys (resolve) {
-  //     require(['../components/activitys.vue'], resolve);
-  //   }
-  // }
 }
 </script>
 

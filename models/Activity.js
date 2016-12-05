@@ -25,7 +25,7 @@ let DocSchema = new Schema({
 //TODO 聚合去重？？
 
 let method = {
-  * findStartTimePage (page, select) {//, user_populate
+  * findStartTimePage (page, select) {
     if (page) {
       let refname = this.modelName;
       let rs = {};
@@ -53,26 +53,6 @@ let method = {
           location: 1,tags: 1,
         }
       }}
-      // if (user_populate) {
-      //   if (user_populate.creater) {
-      //     aggregate.push(
-      //       {"$lookup":{"from":"User","localField":"creater","foreignField":"_id","as":"creater"}},
-      //       {"$unwind":"$creater"}
-      //     )
-      //     project.$project.creater = {
-      //       _id:1,id:"$creater._id",username:1, nickname:1, avatar:1,
-      //     }
-      //   }
-      //   if (user_populate.refer_object&&user_populate.refer_object.creater) {
-      //     aggregate.push(
-      //       {"$lookup":{"from":"User","localField":"refer_object.creater","foreignField":"_id","as":"refer_object.creater"}},
-      //       {"$unwind":"$refer_object.creater"}
-      //     )
-      //     project.$project.refer_object.creater = {
-      //       _id:1,id:"$refer_object.creater._id",username:1, nickname:1, avatar:1,
-      //     }
-      //   }
-      // }
       aggregate.push(project);
       let results = yield Subject.aggregate(aggregate).exec();
       if (select) {
@@ -116,7 +96,7 @@ let method = {
     }
   },
 
-  * findStartTimePageOnExpose (page, curuid, uid, select) {//, user_populate
+  * findStartTimePageOnExpose (page, curuid, uid, select) {
     if (page) {
       let refname = this.modelName;
       let relname = Relation.modelName;
@@ -177,26 +157,6 @@ let method = {
           location: 1,tags: 1,
         }
       }}
-      // if (user_populate) {
-      //   if (user_populate.creater) {
-      //     aggregate.push(
-      //       {"$lookup":{"from":"User","localField":"creater","foreignField":"_id","as":"creater"}},
-      //       {"$unwind":"$creater"}
-      //     )
-      //     project.$project.creater = {
-      //       _id:1,id:"$creater._id",username:1, nickname:1, avatar:1,
-      //     }
-      //   }
-      //   if (user_populate.refer_object&&user_populate.refer_object.creater) {
-      //     aggregate.push(
-      //       {"$lookup":{"from":"User","localField":"refer_object.creater","foreignField":"_id","as":"refer_object.creater"}},
-      //       {"$unwind":"$refer_object.creater"}
-      //     )
-      //     project.$project.refer_object.creater = {
-      //       _id:1,id:"$refer_object.creater._id",username:1, nickname:1, avatar:1,
-      //     }
-      //   }
-      // }
       aggregate.push(project);
 
       let results = yield Subject.aggregate(aggregate).exec();

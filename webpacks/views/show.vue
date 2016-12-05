@@ -34,9 +34,6 @@ export default {
     }
   },
   mounted() {
-    // this.showActivity = 'Activity';
-    // this.showComments = 'Comments';
-    // this.showNewComment = 'NewComment';
     bus.$on('userclick', (userId) => {
       if (utils.haveToken()) {
         this.$router.push({ name: 'profile', params: { userId }});
@@ -50,17 +47,6 @@ export default {
     Comments,
     NewComment
   }
-  // components: {
-  //   Activity (resolve) {
-  //     require(['../components/activity.vue'], resolve);
-  //   },
-  //   Comments (resolve) {
-  //     require(['../components/comments.vue'], resolve);
-  //   },
-  //   NewComment (resolve) {
-  //     require(['../components/newcomment.vue'], resolve);
-  //   }
-  // }
 }
 </script>
 

@@ -141,17 +141,6 @@ let method = {
         }
       }
 
-      // if (user_populate) {
-      //   if (user_populate.creater) {
-      //     aggregate.push(
-      //       {"$lookup":{"from":"User","localField":"creater","foreignField":"_id","as":"creater"}},
-      //       {"$unwind":"$creater"}
-      //     )
-      //     project.$project.creater = {
-      //       _id:1,id:"$creater._id",username:1, nickname:1, avatar:1,
-      //     }
-      //   }
-      // }
       aggregate.push(project);
 
       let results = yield this.aggregate(aggregate).exec();

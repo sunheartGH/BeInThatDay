@@ -27,7 +27,7 @@ let method = {
     }
   },
 
-  * findByPageUnderObject (page, under_type, under_object, select) {//, user_populate
+  * findByPageUnderObject (page, under_type, under_object, select) {
     if (page && under_type && under_object) {
       let query = {created_at:{}, under_object, under_type};
       if (page.lastime) {
@@ -36,19 +36,7 @@ let method = {
       if (page.firstime) {
         Object.assign(query.created_at, {$gt: page.firstime});
       }
-      // let populate;
-      // if (user_populate) {
-      //   populate = user_populate;
-      // } else {
-      //   populate = [{
-      //     path: "creater",
-      //     select: Constants.UserPopulateSelect
-      //   },{
-      //     path: "reply_user",
-      //     select: Constants.UserPopulateSelect
-      //   }];
-      // }
-      let results =  yield this.find(query).skip(page.offset).limit(page.size)//.populate(populate);
+      let results =  yield this.find(query).skip(page.offset).limit(page.size);
       results.forEach((e,i,a) => {
         a[i] = e.toObject();
       });
