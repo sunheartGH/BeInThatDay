@@ -48,50 +48,98 @@ exports.parseUserId = function (body) {
   }
 };
 
-exports.trimObject = function (obj){
-  let param = {};
+exports.trimed = function trimed(obj){
+  let param;
   if ( obj === null || obj === undefined || obj === "" ) return param;
-  for (let key in obj ){
-    if (toString.call(obj[key]) === "[object Object]"){
-      param[key] = trimObject(obj[key]);
-    }else if(obj[key] !== null && obj[key] !== undefined && obj[key] !== ""){
-      param[key] = obj[key];
+  if (toString.call(obj) === "[object Object]") {
+    param = {};
+    for (let key in obj ){
+      if(obj[key] !== null && obj[key] !== undefined && obj[key] !== ""){
+        param[key] = trimed(obj[key]);
+      }
+    }
+  } else if (toString.call(obj) === "[object Array]") {
+    param = [];
+    for (let key in obj ){
+      if(obj[key] !== null && obj[key] !== undefined && obj[key] !== ""){
+        param.push(trimed(obj[key]));
+      }
+    }
+  } else {
+    param = obj;
+    if (typeof param == "string") {
+      param = param.trim();
     }
   }
   return param;
 };
 
-exports.selectInDoc = function (doc, select){
-  if (doc && toString.call(doc) == "[object Object]" && select) {
-    select = flatten(select);
-    for (let key in select) {
-      if (key.indexOf(".") > 0) {
-        _selectWalkStart(doc, select, key);
-      } else {
-        if (!select[key]) {
-          delete doc[key];
+exports.selected = function (doc, select){
+  if (doc && select) {
+    let sflat = flatten(select);
+    let fval = sflat[Object.keys(sflat)[0]];
+    if (fval) { //表示为执行收集操作
+      if (toString.call(doc) == "[object Object]") {
+        _collectWalkStart(doc, select);
+      } else if (toString.call(doc) == "[object Array]" && doc.length) {
+        for (let d of doc) {
+          _collectWalkStart(d, select);
         }
       }
-    }
-  }
-};
-exports.selectInDocs = function (docs, select){
-  if (docs && toString.call(docs) == "[object Array]" && docs.length && select) {
-    select = flatten(select);
-    for (let doc of docs) {
-      for (let key in select) {
-        if (key.indexOf(".") > 0) {
-          _selectWalkStart(doc, select, key);
-        } else {
-          if (!select[key]) {
-            delete doc[key];
+    } else {//表示为执行删除操作
+      select = sflat;
+      if (toString.call(doc) == "[object Object]") {
+        for (let key in select) {
+          if (key.indexOf(".") > 0) {
+            _deleteWalkStart(doc, select, key);
+          } else {
+            if (!select[key]) {
+              delete doc[key];
+            }
+          }
+        }
+      } else if (toString.call(doc) == "[object Array]" && doc.length) {
+        for (let d of doc) {
+          for (let key in select) {
+            if (key.indexOf(".") > 0) {
+              _deleteWalkStart(d, select, key);
+            } else {
+              if (!select[key]) {
+                delete d[key];
+              }
+            }
           }
         }
       }
     }
   }
 };
-function _selectWalkStart(doc, select, key) {
+
+function _collectWalkStart(doc, select) {
+  function walk (o, s) {
+    for (let k in o){
+      if (s[k]) {
+        if (toString.call(o[k]) == "[object Array]" &&
+          isNaN(s[k]) &&
+          isNaN(Object.keys(s[k])[0])) {
+
+          for (let _o of o[k]) {
+            walk(_o, s[k]);
+          }
+        } else {
+          if (isNaN(s[k])) {
+            walk(o[k], s[k]);
+          }
+        }
+      } else {
+        delete o[k];
+      }
+    }
+  }
+  walk(doc, select);
+}
+
+function _deleteWalkStart(doc, select, key) {
   let ks = key.split(".");
   let i = 0;
   function walk (obj, ck) {
@@ -103,8 +151,13 @@ function _selectWalkStart(doc, select, key) {
         walk(obj[ck], ks[i]);
       }
     } else if (toString.call(obj) == "[object Array]") {
-      if (!isNaN(ck) && obj[ck] && !select[key]) {
-        delete obj[ck];
+      if (!isNaN(ck)) {
+        if (i == ks.length - 1 && obj[ck] && !select[key]) {
+          delete obj[ck];
+        } else {
+          i++;
+          walk(obj[ck], ks[i]);
+        }
       } else {
         for (let o of obj) {
           walk(o, ks[i]);

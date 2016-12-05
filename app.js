@@ -3,28 +3,33 @@
   app = require("koa")(),
   logger = require("koa-logger"),
   router = require("koa-router")(),
+  statics = require("koa-static"),
   ckr = require("comment-koa-router"),
   //routerCache = require("koa-router-cache"),
+  // staticCache = require("koa-static-cache"),
   bodyparser = require("koa-bodyparser"),
-  staticCache = require("koa-static-cache"),
   // session = require("koa-generic-session"),
   // mongoStore = require("koa-generic-session-mongo"),
   //"koa-generic-session": "1.10.2",
   //"koa-generic-session-mongo": "0.2.5",
   compress = require("koa-compress"),
-  config = require("config-lite"),
+  config = require("config"),
   prehandle = require("./pres"),
   ckrPlugins = require("./utils/Plugins.js");
 
-
+app.use(function* (next){
+  console.log("  ip: ", this.ip, "↰");
+  yield next;
+});
+app.use(logger());
 app.use(bodyparser({
   enableTypes: ["json", "form", "text"],
   extendTypes: {
     text: ["application/xml", "text/xml", "text/*"]
   }
 }));
-app.use(staticCache(config.staticCacheConf));
-app.use(logger());
+// app.use(staticCache(config.staticCacheConf));
+app.use(statics(config.staticsConf));
 app.keys = ["beinthatday"];
 // app.use(session({
 //   store: new mongoStore(config.mongodb)

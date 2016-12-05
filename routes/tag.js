@@ -25,4 +25,10 @@ module.exports = class tag {
     this.body = AppInfo({tag});
   }
 
+  //@route(put /tag/:tid)
+  //#token()
+  * modifyTag () {
+    //修改标签，描述
+
+  }
 };

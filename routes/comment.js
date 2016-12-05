@@ -1,5 +1,5 @@
-const {Comment, Subject, User} = require('../models');
-const {AppInfo, Codes} = require('../utils');
+const {Comment, Subject, Activity, User} = require('../models');
+const {AppInfo, Codes, Utils} = require('../utils');
 
 module.exports = class comment {
   constructor () {}
@@ -14,10 +14,10 @@ module.exports = class comment {
       content
     }
     if (under_type == Subject.modelName) {
-      let subject = yield Subject.findById(under_object);
+      let subject = yield Subject.findByIdOnExpose(under_object, this.state.user.id, Activity.modelName);
       if (subject) {
         comment.under_type = Subject.modelName;
-        comment.under_object = subject.id;
+        comment.under_object = subject.id.toString();
       }
     }
     if (!comment.under_type) {
@@ -31,7 +31,12 @@ module.exports = class comment {
     if (reply_user) {
       let user = yield User.findById(reply_user);
       if (user) {
-        comment.reply_user = user.id;
+        if (user.id.toString() != this.state.user.id.toString()) {
+          comment.reply_user = user.id;
+        } else {
+          this.body = AppInfo.Msg("reply_user can't be self", Codes.Common.USER_SELF_WRONG);
+          return;
+        }
       } else {
         this.body = AppInfo.Msg("reply_user not found", Codes.Comment.REPLY_USER_FOUND);
         return;
@@ -45,12 +50,13 @@ module.exports = class comment {
   }
 
   //@route(get /comments)
-  //#token()
+  //#iftoken()
+  //#mount({chunk:comments,mounts:[creater,relation]});
   * showComments () {
     //查询某对象下的评论列表
     let {under_object, under_type} = this.query;
     let pageObj = Utils.parsePageTime(this.query);
-    let comments = yield Comment.findByPageUnderObject(pageObj, under_type, under_object);
+    let comments = yield Comment.findByPageUnderObject(pageObj, under_type, under_object, null);
     let page = pageObj.page;
     let size = 0;
     if (comments && comments.length) {

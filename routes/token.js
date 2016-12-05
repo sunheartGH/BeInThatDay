@@ -16,7 +16,7 @@ module.exports = class token {
       user = yield User.findByAccount(account, enpw);
       if (user) {
         //验证通过
-        //TODO 若用户没有token代表正常，若已有token_sign数据代表不正常(重复登陆 或 抢占登录)
+        //若用户没有token代表正常，若已有token_sign数据代表不正常(重复登陆 或 抢占登录)，TODO 给出消息提醒
         //生成token
         let token = Cryptos.buildToken(user.id);
         //更新用户的token_sign数据
@@ -33,18 +33,33 @@ module.exports = class token {
     }
   }
 
-  //@route(get /token)
+  //@route(get /token/info)
+  //#token()
   * showToken () {
     //获取令牌信息/token验证
+    this.body = Cryptos.parseToken(this.state.token);
   }
 
-  //@route(put /token)
-  * modifyToken () {
-    //更新令牌信息
+  //@route(put /token/refresh)
+  //#token()
+  * refreshToken () {
+    //刷新令牌
+    //生成token
+    let token = Cryptos.buildToken(this.state.user.id);
+    //更新用户的token_sign数据
+    let ts = token.split(".");
+    //更新用户当前正在使用的token签名
+    yield User.updateSetDoc(user.id, {token_sign: ts[ts.length - 1]});
+    //返回数据
+    this.body = AppInfo({token});
   }
 
-  //@route(post /token/cancel)
+  //@route(delete /token/cancel)
+  //#token()
   * cancelToken () {
     //销毁令牌，退出
+    yield User.updateSetDoc(this.state.user.id, {$unset:{token_sign: ""}});
+    //返回数据
+    this.body = AppInfo({});
   }
 };

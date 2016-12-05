@@ -16,4 +16,13 @@ exports.RelateType = {
 exports.RelateState = {
   Unilateral: "Unilateral",   //单方的
   Bilateral: "Bilateral",     //双方的
+  Broken: "Broken",           //断开的
 }
+exports.CommentUnderType = {
+  Subject: "Subject",
+}
+exports.UserGender = {
+  woman: "woman",
+  man: "man",
+}
+exports.UserPopulateSelect = "id username nickname avatar";

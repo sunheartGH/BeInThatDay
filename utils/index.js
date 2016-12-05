@@ -1,4 +1,4 @@
-let all = require('require-all');
+const all = require('./RequireAll.js');
 
 module.exports = all({
   dirname: __dirname,

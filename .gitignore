@@ -1,4 +1,5 @@
 /node_modules
-/public/asset/*
+/webpacks/node_modules
+/public/*
 /log
 /pids

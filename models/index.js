@@ -1,6 +1,8 @@
 const mongoose = require('mongoose'),
-      all = require('require-all'),
-      config = require('config-lite').mongodb;
+      all = require('../utils/RequireAll.js'),
+      Utils = require('../utils/Utils.js'),
+      path = require("path"),
+      config = require('config').mongodb;
 
 mongoose.connect(config.url);
 
@@ -17,21 +19,20 @@ mongoose.connection.on('disconnected', ()  => {
 
 module.exports  = all({
   dirname: __dirname,
-  filter: /^(?!index)(.+)\.js$/,
+  filter: /^(?!index)(?!base)(.+)\.js$/,
   recursive: true,
-  resolve (model) {
-    let schema = model.schema;
-    if (schema) {
+  resolve (model, file) {
+    if (model && model.schema) {
       // Duplicate the ID field.
-      schema.virtual('id').get(function () {
+      model.schema.virtual('id').get(function () {
         if (this && this._id){
           return this._id.toHexString();
         }
       });
       // Ensure virtual fields are serialised.
-      schema.set('toJSON', {virtuals: true});
+      model.schema.set('toJSON', {virtuals: true});
       // Ensure virtuals in output when using console.log(obj)
-      schema.set('toObject', { virtuals: true });
+      model.schema.set('toObject', { virtuals: true });
     }
     return model;
   }

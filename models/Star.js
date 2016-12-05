@@ -1,8 +1,9 @@
-let mongoose = require('mongoose');
+const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const base = require('./base.js');
 const Utils = require('../utils/Utils.js');
 
-let StarSchema = new Schema({
+let DocSchema = new Schema({
   creater: {type: Schema.ObjectId, ref: 'User'},              //创建者id
   created_at: {type: Date, default: Date.now},                //创建日期
   updated_at: {type: Date, default: Date.now},                //更新日期
@@ -12,20 +13,17 @@ let StarSchema = new Schema({
   star_score: Number                                          //分数
 });
 
-let mounts = StarSchema.statics;
-
-mounts.saveDoc = function* (body) {
-  return yield new this(body).save();
-}
-
-mounts.findByTarget = function* (creater, tobject, ttype) {
-  if (creater && tobject && ttype) {
-    return yield this.findOne({
-      creater:  mongoose.Types.ObjectId(creater.toString()),
-      target_object:  mongoose.Types.ObjectId(tobject.toString()),
-      target_type: ttype
-    })
+let method = {
+  * findByTarget (creater, tobject, ttype) {
+    if (creater && tobject && ttype) {
+      return yield this.findOne({
+        creater:  mongoose.Types.ObjectId(creater.toString()),
+        target_object:  mongoose.Types.ObjectId(tobject.toString()),
+        target_type: ttype
+      })
+    }
   }
-}
+};
 
-module.exports = mongoose.model('Star', StarSchema, 'Star');
+Object.assign(DocSchema.statics, base, method);
+module.exports = mongoose.model("Star", DocSchema, "Star")

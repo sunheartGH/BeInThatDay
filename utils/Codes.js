@@ -1,4 +1,4 @@
-//30x-33x代表TOKEN和账户验证
+//30x-33x代表TOKEN，账户和权限验证问题
 //36x代表分页数据验证
 //37x-39x代表其他数据问题
 exports.Common = {
@@ -13,6 +13,7 @@ exports.Common = {
   VERIFY_FAIL: 315, //账户验证失败
   USER_NOTFOUND: 321, //用户未找到
   USER_SELF_WRONG: 322, //用户不能对自己进行此操作
+  PERMISSION_FORBID: 330, //用户权限禁止，即用户没有进行此操作的权限
 
 
   PAGETIME_PAGE_WRONG: 361, //分页 page 参数格式/数据错误

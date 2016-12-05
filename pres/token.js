@@ -42,7 +42,7 @@ module.exports = class token {
     yield next;
   }
 
-  * modifyToken (next) {
+  * refreshToken (next) {
     yield next;
   }
 

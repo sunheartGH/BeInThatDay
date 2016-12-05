@@ -4,9 +4,9 @@ const {AppInfo, Codes, Schemas, Constants} = require('../utils');
 module.exports = class relation {
   constructor () {}
 
-  * newRelation (next) {
+  * handleRelation (next) {
     let {relate_user, relate_type} = this.request.body;
-    let validMsg = Schemas.ValidType(`relate_user, relate_type`,
+    let validMsg = Schemas.ValidTypeToMsg(`relate_user, relate_type`,
       Relation, this.request.body);
 
     if (validMsg) {

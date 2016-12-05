@@ -31,7 +31,7 @@ function NotNull(strs, model, chunk) {
   }
 }
 
-exports.NotNull = NotNull;
+exports.NotNullToMsg = NotNull;
 
 function ValidType(strs, model, chunk) {
   strs = str2arr(strs);
@@ -97,10 +97,10 @@ function ValidType(strs, model, chunk) {
   }
 }
 
-exports.ValidType = ValidType;
+exports.ValidTypeToMsg = ValidType;
 
 function ObjectIdValid(value) {
-  if (/^[0-9a-fA-F]{24}$/.test(value) && ObjectId.isValid(value)) {
+  if (value && /^[0-9a-fA-F]{24}$/.test(value) && ObjectId.isValid(value)) {
     return true;
   } else {
     return false;

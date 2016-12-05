@@ -30,4 +30,21 @@ module.exports = class user {
       this.body = AppInfo.Msg("no available account", Codes.Common.NO_ACCOUNT);
     }
   }
+
+  * showUser (next) {
+    //uid 格式判断
+    let {uid} = this.params;
+
+    if (!Schemas.ObjectIdValid(uid)) {
+      this.body = AppInfo.Msg("user id must be objectid string", Codes.User._ID_DATA);
+      return;
+    }
+
+    yield next;
+  }
+
+  * modifyUser (next) {
+    //TODO 修改参格式数判断
+    yield next;
+  }
 };

@@ -1,8 +1,9 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const base = require('./base.js');
 const Utils = require('../utils/Utils.js');
 
-let UserSchema = new Schema({
+let DocSchema = new Schema({
   username: String,                                           //用户名，可以作为账号
   password: String,                                           //密码，密文保存
   email: {                                                    //邮箱，可以作为账号
@@ -31,51 +32,32 @@ let UserSchema = new Schema({
   token_sign: String                                          //记录用户当前正在使用的token签名
 });
 
-let mounts = UserSchema.statics;
+let method = {
+  * findByAccount (account, pw) {
+    //查询某个用户的信息
+    if (account.username) {
+      account = {"username": account.username}
+    } else if (account.email) {
+      account = {"email.account": account.email}
+    } else if (account.phone) {
+      account = {"phone.account": account.phone}
+    } else {
+      account = null;
+    }
+    if (account) {
+      if (pw) {account.password = pw;}
+      return yield this.findOne(account);
+    }
+  },
 
-mounts.saveDoc = function* (account) {
-  if (account) {
-    return yield new this(account).save();
+  * updateStar (user, score) {
+    let body = {
+      star_score: ((user.star_score || 0) * (user.star_count || 0) + score ) / ((user.star_count||0) + 1),
+      star_count: (user.star_count || 0) + 1
+    }
+    return yield this.findOneAndUpdate({_id: user.id}, {$set: body});
   }
-}
+};
 
-mounts.findByAccount = function* (account, pw) {
-  //查询某个用户的信息
-  if (account.username) {
-    account = {"username": account.username}
-  } else if (account.email) {
-    account = {"email.account": account.email}
-  } else if (account.phone) {
-    account = {"phone.account": account.phone}
-  } else {
-    account = null;
-  }
-  if (account) {
-    if (pw) {account.password = pw;}
-    return yield this.findOne(account);
-  }
-}
-
-mounts.updateSetDoc = function* (id, doc) {
-  if (id && doc && Object.keys(doc)) {
-    doc = Utils.trimObject(doc);
-    doc.updated_at = new Date();
-    return yield this.findOneAndUpdate({_id: id}, {$set:doc});
-  }
-}
-
-mounts.findById = function* (uid) {
-  if (uid) {
-    return yield this.findOne({_id: uid});
-  }
-}
-
-mounts.updateStar = function* (user, score) {
-  let body = {
-    star_score: ((user.star_score || 0) * (user.star_count || 0) + score ) / ((user.star_count||0) + 1),
-    star_count: (user.star_count || 0) + 1
-  }
-  return yield this.findOneAndUpdate({_id: user.id}, {$set: body});
-}
-
-module.exports = mongoose.model('User', UserSchema, 'User');
+Object.assign(DocSchema.statics, base, method);
+module.exports = mongoose.model("User", DocSchema, "User")

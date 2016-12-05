@@ -6,7 +6,7 @@ module.exports = class star {
 
   * newStar (next) {
     let {target_user, target_object, target_type, star_score} = this.request.body;
-    let validMsg = Schemas.ValidType(`target_user, target_object,
+    let validMsg = Schemas.ValidTypeToMsg(`target_user, target_object,
       target_type, star_score`,
       Star, this.request.body);
 
