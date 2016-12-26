@@ -22,11 +22,11 @@ let DocSchema = new Schema({
   home: String,                                               //url 用户主页
   depict: String,                                             //用户描述
   tags: [{type: Schema.ObjectId, ref: 'Tag'}],                //标签，爱好，领域等
-  favor_subjects: Number,                                     //收藏subject数
-  create_subjects: Number,                                    //创建subject数
-  followed_count: Number,                                     //被关注数
-  follow_count: Number,                                       //关注用户数
-  friend_count: Number,                                       //好友数
+  favor_subjects: {type: Number, default: 0},                 //收藏subject数
+  create_subjects: {type: Number, default: 0},                //创建subject数
+  followed_count: {type: Number, default: 0},                 //被关注数
+  follow_count: {type: Number, default: 0},                   //关注用户数
+  friend_count: {type: Number, default: 0},                   //好友数
   star_score: {type: Number, default: 0},                     //分数
   star_count: {type: Number, default: 0},                     //打分次数
   token_sign: String                                          //记录用户当前正在使用的token签名
@@ -35,18 +35,21 @@ let DocSchema = new Schema({
 let method = {
   * findByAccount (account, pw) {
     //查询某个用户的信息
+    let query = {};
+    let accounts = [];
     if (account.username) {
-      account = {"username": account.username}
+      accounts.push({"username": account.username});
     } else if (account.email) {
-      account = {"email.account": account.email}
+      accounts.push({"email.account": account.email});
     } else if (account.phone) {
-      account = {"phone.account": account.phone}
+      accounts.push({"phone.account": account.phone});
     } else {
       account = null;
     }
-    if (account) {
-      if (pw) {account.password = pw;}
-      return yield this.findOne(account);
+    query.$or = accounts;
+    if (Object.keys(query).length) {
+      if (pw) {query.password = pw;}
+      return yield this.findOne(query);
     }
   },
 

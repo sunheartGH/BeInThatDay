@@ -102,8 +102,6 @@ exports.ValidTypeToMsg = ValidType;
 function ObjectIdValid(value) {
   if (value && /^[0-9a-fA-F]{24}$/.test(value) && ObjectId.isValid(value)) {
     return true;
-  } else {
-    return false;
   }
 }
 

@@ -24,7 +24,7 @@ module.exports = class token {
         //更新用户当前正在使用的token签名
         yield User.updateSetDoc(user.id, {token_sign: ts[ts.length - 1]});
         //返回数据
-        this.body = AppInfo({token});
+        this.body = AppInfo({token,user:{id:user.id,nickname:user.nickname,avatar:user.avatar}});
       } else {
         this.body = AppInfo.Msg("account verify fail", Codes.Common.VERIFY_FAIL);
       }

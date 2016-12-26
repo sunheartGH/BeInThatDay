@@ -1,4 +1,5 @@
- let https = require("https"),
+ let http = require("http"),
+  https = require("https"),
   fs = require("fs"),
   app = require("koa")(),
   logger = require("koa-logger"),
@@ -44,12 +45,18 @@ ckr(router, "./routes", {plugin: [prehandle, ckrPlugins], predir: "./pres"});
 app.use(router.routes());
 app.use(router.allowedMethods());
 
-let options = {
-  key: fs.readFileSync("./certs/server.key"),
-  cert: fs.readFileSync("./certs/server.crt"),
-  passphrase: "beinthatday"
-}
-
-https.createServer(options, app.callback()).listen(config.port, () => {
+http.createServer(app.callback()).listen(config.port, () => {
   console.log("Server listening on: ", config.port);
 });
+
+// let options = {
+//   key: fs.readFileSync("./certs/server.key"),
+//   cert: fs.readFileSync("./certs/server.crt"),
+//   passphrase: "beinthatday"
+// }
+
+// https.createServer(options, app.callback()).listen(config.port, () => {
+//   console.log("Server listening on: ", config.port);
+// });
+
+//"--harmony_destructuring",

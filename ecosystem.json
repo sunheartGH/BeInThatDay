@@ -1,12 +1,12 @@
 {"apps":[{
   "name"            : "beinthatday-app",
   "script"          : "./app.js",
-  "node_args"       : ["--harmony_destructuring", "--use_strict"],
+  "node_args"       : ["--use_strict"],
   "error_file"      : "./log/node-app.stderr.log",
   "out_file"        : "./log/node-app.stdout.log",
   "pid_file"        : "./pids/node-geo-api.pid",
   "watch"           : false,
-  "ignore_watch"    : ["./node_modules", "./log/*", "./ecosystem.json", "./utils/*", "./pids/*","./public", "./npm-debug.log"],
+  "ignore_watch"    : ["./node_modules", "./log/*", "./temp", "./ecosystem.json", "./pids/*","./public", "./npm-debug.log", "./webpacks"],
   "merge_logs"      : true,
-  "log_date_format" : "YYYY-MM-DD HH:mm Z"
+  "log_date_format" : "YYYY-MM-DD HH:mm:ss Z"
 }]}

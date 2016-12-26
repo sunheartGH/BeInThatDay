@@ -1,4 +1,5 @@
-exports.usernameRgx = /^[a-zA-Z0-9.-_$@*#&]{3,30}$/;
+exports.usernameRgx = /^[a-zA-Z0-9.-_$@*#&]{2,32}$/;
+exports.nicknameRgx = /^[a-zA-Z0-9.-_$@*#&\u4e00-\u9fa5]{2,32}$/;
 exports.passwordRgx = /^[a-zA-Z0-9.\-_$@*!/+=~#%<>:;"'&^()|]{6,36}$/;
 exports.sensitiveChars = [
   "public","publics","username","name","admin","root","beinthatday"
@@ -12,6 +13,7 @@ exports.ExposeLevel = {
 exports.RelateType = {
   Follow: "Follow",       //关注
   Friend: "Friend",       //好友
+  Followed: "Followed",   //被关注
 }
 exports.RelateState = {
   Unilateral: "Unilateral",   //单方的
@@ -25,4 +27,7 @@ exports.UserGender = {
   woman: "woman",
   man: "man",
 }
-exports.UserPopulateSelect = "id username nickname avatar";
+exports.LocationType = {
+  Normal: "Normal",
+  Common: "Common",
+}

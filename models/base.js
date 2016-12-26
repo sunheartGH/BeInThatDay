@@ -7,7 +7,9 @@ module.exports = {
       doc = Utils.trimed(doc);
       if (Object.keys(doc).length) {
         let result = yield new this(doc).save();
-        result = result.toObject();
+        if (result) {
+          result = result.toObject();
+        }
         return result;
       }
     }
@@ -15,25 +17,44 @@ module.exports = {
 
   * findById (id, query, select) {
     if (id) {
-      if (query) {
-        query._id = id;
-      } else {
-        query = {_id: id};
-      }
+      query = query || {};
+      query = Utils.trimed(query);
+      query._id = id;
       let result = yield this.findOne(query, select);
-      result = result.toObject();
+      if (result) {
+        result = result.toObject();
+      }
       return result;
     }
   },
 
   * findByIds (ids, query, select) {
     if (ids && ids.length) {
-      if (query) {
-        query._id = {$in: ids};
-      } else {
-        query = {_id: {$in: ids}};
-      }
+      query = query || {};
+      query = Utils.trimed(query);
+      query._id = {$in: ids};
       let results = yield this.find(query, select);
+      if (results) {
+        results.forEach((e,i,a) => {
+          a[i] = e.toObject();
+        });
+      }
+      return results;
+    }
+  },
+
+  * findByPage(page, query, select) {
+    if (page) {
+      query = query || {};
+      query = Utils.trimed(query);
+      query.created_at = {};
+      if (page.lastime) {
+        Object.assign(query.created_at, {$lt: page.lastime});
+      }
+      if (page.firstime) {
+        Object.assign(query.created_at, {$gt: page.firstime});
+      }
+      let results = yield this.find(query, select).skip(page.offset).limit(page.size);
       results.forEach((e,i,a) => {
         a[i] = e.toObject();
       });
@@ -57,6 +78,16 @@ module.exports = {
       if (Object.keys(doc).length) {
         doc.updated_at = new Date();
         return yield this.findOneAndUpdate({_id: id}, {$push:doc}, {new: true});
+      }
+    }
+  },
+
+  * updatePullDoc (id, doc) {
+    if (id && doc && Object.keys(doc).length) {
+      doc = Utils.trimed(doc);
+      if (Object.keys(doc).length) {
+        doc.updated_at = new Date();
+        return yield this.findOneAndUpdate({_id: id}, {$pull:doc}, {new: true});
       }
     }
   },

@@ -1,44 +1,64 @@
 <template>
 <div>
-  <component v-bind:is="showLogin"></component>
-  <component v-bind:is="showCalendar"></component>
-  <component v-bind:is="showActivitys" :showdate='showDate'></component>
+  <div>
+    <app-locations class="homelocations" :oncity="onCity"></app-locations>
+    <app-calendar :oncity="onCity" :refresh="homeRefresh"></app-calendar>
+  </div>
+  <app-activitys v-if="showActivitys" :ondate='onDate' :oncity="onCity" :refresh="homeRefresh"></app-activitys>
 </div>
 </template>
 
 <script>
-import Login from '../components/login.vue'
 import Calendar from '../components/calendar.vue'
 import Activitys from '../components/activitys.vue'
-
+import Locations from '../components/locations.vue'
 
 import bus from 'bus'
+import utils from 'utils'
 
 export default {
   data () {
     return {
-      showLogin: 'Login',
-      showCalendar: 'Calendar',
-      showActivitys: '',
-      showDate: '',
+      showActivitys: false,
+      onDate: '',
+      onCity: '',
+      homeRefresh: 0,
     }
   },
   mounted() {
     bus.$on('dayclick', (date) => {
-      this.showActivitys = 'Activitys';
-      this.showDate = date;
+      this.showActivitys = true;
+      this.onDate = date;
     });
-    bus.$on('activityclick', (activityId) => {
-      this.$router.push({ name: 'show', params: { activityId }});
+    bus.$on('locationchanged', (location) => {
+      this.onCity = location.city;
     });
   },
+  props:['refresh'],
+  watch: {
+    refresh(val) {
+      if (val&&val.includes('home')) {
+        this.homeRefresh = val;
+      }
+    },
+    '$route' (to, from) {
+      if (this.$router.params) {
+        console.log(this.$router.params.userId);
+      }
+    }
+  },
   components: {
-    Login,
-    Calendar,
-    Activitys
-  }
+    "app-calendar": Calendar,
+    "app-activitys": Activitys,
+    "app-locations": Locations,
+  },
 }
 </script>
 
 <style>
+.homelocations.search.locations {
+  float: left;
+  position: absolute;
+  margin-left: 10px;
+}
 </style>

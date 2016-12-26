@@ -1,8 +1,7 @@
 <template>
-<div>
-  <component v-bind:is="showActivity" :activityid='activityId'></component>
-  <component v-bind:is="showNewComment" :under='theUnder'></component>
-  <component v-bind:is="showComments" :under='theUnder'></component>
+<div class="showdetail">
+  <app-activity :activityid='activityId' :refresh="activityRefresh"></app-activity>
+  <app-comments class="showcomments" :under='theUnder'></app-comments>
 </div>
 </template>
 
@@ -11,44 +10,55 @@ import bus from 'bus'
 import utils from 'utils'
 import Activity from '../components/activity.vue'
 import Comments from '../components/comments.vue'
-import NewComment from '../components/newcomment.vue'
 
 export default {
   data () {
     return {
-      showActivity: 'Activity',
-      showComments: 'Comments',
-      showNewComment: 'NewComment',
-      activityId: this.$route.params.activityId,
-      theUnder: {
-        object: this.$route.params.activityId,
-        type: 'Subject',
-      }
+      activityId: null,
+      theUnder: {},
+      activityRefresh: 0,
     }
   },
   activated() {
-    this.activityId = this.$route.params.activityId;
-    this.theUnder = {
-      object: this.activityId,
-      type: 'Subject',
-    }
+    this.showActivity();
   },
   mounted() {
-    bus.$on('userclick', (userId) => {
-      if (utils.haveToken()) {
-        this.$router.push({ name: 'profile', params: { userId }});
-      } else {
-        alert("you should login");
+  },
+  methods: {
+    showActivity() {
+      if (this.$route.params.activityId) {
+        this.activityId = this.$route.params.activityId;
+        this.theUnder = {
+          object: this.activityId,
+          type: 'Subject',
+        }
       }
-    });
+    }
   },
   components: {
-    Activity ,
-    Comments,
-    NewComment
+    "app-activity":Activity ,
+    "app-comments":Comments,
+  },
+  props:['refresh'],
+  watch: {
+    refresh(val) {
+      if (val&&val.includes('show')) {
+        this.activityRefresh = val;
+      }
+    },
+    '$route' (to, from) {
+      this.showActivity();
+    }
   }
 }
 </script>
 
 <style>
+.showdetail {
+  padding-left: 10%;
+  padding-right: 10%;
+}
+.showcomments {
+  margin: 1em;
+}
 </style>

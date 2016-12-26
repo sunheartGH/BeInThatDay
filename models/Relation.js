@@ -11,9 +11,8 @@ let DocSchema = new Schema({
   relate_type: String,                                                          //关系类型 Follow, Friend
   relate_state: {type: String, default: Constants.RelateState.Unilateral},      //关系状态 Unilateral, Bilateral
                                                                                 //关系为关注：关注关系状态都为单方的
-                                                                                //取消关注：删除单方记录
                                                                                 //关系为好友：经过对方同意后双方的记录状态都为双方的
-                                                                                //取消好友关系：状态为 Broken 断开的
+                                                                                //取消关注/好友关系：状态为 Broken 断开的
   created_at: {type: Date, default: Date.now},                                  //创建日期
   updated_at: {type: Date, default: Date.now}                                   //更新日期
 });

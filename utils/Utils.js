@@ -20,6 +20,24 @@ exports.validPageTime = function (body) {
   }
 };
 
+exports.havePageTime = function (body, str) {
+  if (body) {
+    if (str) {
+      if (Array.isArray(str)) {
+        for (let s of str) {
+          if (!body[s]) {
+            return false;
+          }
+        }
+      } else if (body[str]) {
+        return true;
+      }
+    } else if (body.lastime || body.firstime || body.page || body.size) {
+      return true;
+    }
+  }
+}
+
 exports.parsePageTime = function (body) {
   if (body) {
     let {page, size, lastime, firstime} = body;

@@ -15,7 +15,6 @@ exports.Common = {
   USER_SELF_WRONG: 322, //用户不能对自己进行此操作
   PERMISSION_FORBID: 330, //用户权限禁止，即用户没有进行此操作的权限
 
-
   PAGETIME_PAGE_WRONG: 361, //分页 page 参数格式/数据错误
   PAGETIME_SIZE_WRONG: 362, //分页 size 参数格式/数据错误
   PAGETIME_LASTIME_WRONG: 363, //分页 lastime 参数格式/数据错误
@@ -24,6 +23,13 @@ exports.Common = {
   DATE_WRONG: 371, //日期数据错误
 
   REPEAT_WRONG: 381, //数据重复错误，即数据不应该重复
+
+  DB_FAIL: 391, //数据库操作失败
+
+  PARAM_NULL: 401,
+  PARAM_TYPE: 501,
+  PARAM_DATA: 601,
+  PARAM_FOUND: 701,
 };
 
 const models = require('../models');
@@ -68,11 +74,11 @@ function arr2obj (arr, num) {
     }
     let one = arr[i];
     let one_null = one + "_NULL";
-    let one_format = one + "_TYPE";
+    let one_type = one + "_TYPE";
     let one_data = one + "_DATA";
     let one_found = one + "_FOUND";
     seqObj[one_null] = Number(4 + numstr + istr);
-    seqObj[one_format] = Number(5 + numstr + istr);
+    seqObj[one_type] = Number(5 + numstr + istr);
     seqObj[one_data] = Number(6 + numstr + istr);
     seqObj[one_found] = Number(7 + numstr + istr);
   }

@@ -26,7 +26,11 @@ module.exports = {
     loaders: {
       js: 'babel'
     }
-
+  },
+  resolve: {
+    alias: {
+      config: "./config.js"
+    }
   },
   plugins: [
     // new  webpack.optimize.CommonsChunkPlugin(['vue','vue-resource','vue-router'], 'libs/vue/[name].js'),
@@ -34,6 +38,16 @@ module.exports = {
       { from: 'node_modules/vue/dist/vue.js', to: 'libs/vue/vue.js' },
       { from: 'node_modules/vue-resource/dist/vue-resource.js', to: 'libs/vue/vue-resource.js' },
       { from: 'node_modules/vue-router/dist/vue-router.js', to: 'libs/vue/vue-router.js' },
+      { from: 'node_modules/validator/validator.js', to: 'libs/validator/validator.js' },
+      { from: 'node_modules/jquery/dist/jquery.js', to: 'libs/jquery/jquery.js' },
+      { from: 'node_modules/semantic-ui/dist/semantic.js', to: 'libs/semantic/semantic.js' },
+      { from: 'node_modules/semantic-ui/dist/semantic.css', to: 'libs/semantic/semantic.css' },
+      { from: 'node_modules/semantic-ui/dist/themes/default', to: 'libs/semantic/themes/default' },
+      { from: 'node_modules/quill/dist/quill.core.js', to: 'libs/quill/quill.core.js' },
+      { from: 'node_modules/quill/dist/quill.js', to: 'libs/quill/quill.js' },
+      { from: 'node_modules/quill/dist/quill.core.css', to: 'libs/quill/quill.core.css' },
+      { from: 'node_modules/quill/dist/quill.snow.css', to: 'libs/quill/quill.snow.css' },
+      { from: 'node_modules/moment/moment.js', to: 'libs/moment/moment.js' },
       { from: 'utils/utils.js', to: 'libs/utils/utils.js' },
       { from: 'index.html', to: 'index.html' },
     ]),
@@ -43,5 +57,7 @@ module.exports = {
     "vue-router": "VueRouter",
     "utils": "Utils",
     "bus": "Bus",
+    "validator": "validator",
+    "quill": "Quill",
   }
 }

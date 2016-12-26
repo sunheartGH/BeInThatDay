@@ -1,5 +1,5 @@
 const {AppInfo, Codes, Cryptos, Constants} = require("../utils");
-const {User, Tag, Relation, Location} = require('../models');
+const {User, Tag, Relation, Location, Subject, Activity} = require('../models');
 
 exports.error = function (){
   return function* (next){
@@ -99,6 +99,10 @@ exports.mount = function (howto) {
       let ifRelation = false;
       let ifTags = false;
       let ifLocation = false;
+      let ifReply = false;
+      let ifFavorited = false;
+
+
       if (howto.mounts.includes("creater")) {
         ifCreater = true;
       }
@@ -111,111 +115,31 @@ exports.mount = function (howto) {
       if (howto.mounts.includes("location")) {
         ifLocation = true;
       }
+      if (howto.mounts.includes("reply")) {
+        ifReply = true;
+      }
+      if (howto.mounts.includes("favorited")) {
+        ifFavorited = true;
+      }
 
       let creaters = new Set();
       let relations = new Set();
       let tagss = new Set();
       let locations = new Set();
+      let replys = new Set();
+      let favoriteds = new Set();
 
       let createrMounts = {};
       let relationMounts = {};
       let tagMounts = {};
       let locationMounts = {};
+      let replyMounts = {};
+      let favoritedMounts = {};
 
-      let chunk = this.body.result[howto.chunk];
-      if (toString.call(chunk) == "[object Array]") {
-        for (let i = 0; i < chunk.length; i++) {
-          let oneToMount = chunk[i];
-          if (ifCreater) {
-            if (oneToMount.creater) {
-              let c = oneToMount.creater.toString();
-              if ((this.state.user && c != this.state.user.id.toString())||
-                !this.state.user) {
-
-                creaters.add(c)
-                if (createrMounts[c]) {
-                  createrMounts[c].push(oneToMount);
-                } else {
-                  createrMounts[c] = [oneToMount];
-                }
-              }
-            }
-          }
-          if (oneToMount.refer_object) {
-            if (ifCreater) {
-              if (oneToMount.refer_object.creater) {
-                let c = oneToMount.refer_object.creater.toString()
-                if ((this.state.user && c != this.state.user.id.toString())||
-                  !this.state.user) {
-
-                  creaters.add(c)
-                  if (createrMounts[c]) {
-                    createrMounts[c].push(oneToMount.refer_object);
-                  } else {
-                    createrMounts[c] = [oneToMount.refer_object];
-                  }
-                }
-              }
-            }
-            if (ifLocation) {
-              if (oneToMount.refer_object.location) {
-                let l = oneToMount.refer_object.location.toString();
-                locations.add(l);
-                if (locationMounts[l]) {
-                  locationMounts[l].push(oneToMount.refer_object);
-                } else {
-                  locationMounts[l] = [oneToMount.refer_object];
-                }
-              }
-            }
-          }
-          if (ifRelation &&  ['user','users'].includes(howto.chunk)) {
-            if (oneToMount.id) {
-              let id = oneToMount.id.toString();
-              if (this.state.user && id != this.state.user.id.toString()) {
-                relations.add(id)
-                if (relationMounts[id]) {
-                  relationMounts[id].push(oneToMount);
-                } else {
-                  relationMounts[id] = [oneToMount];
-                }
-              }
-            }
-          }
-          if (ifTags) {
-            if (oneToMount.tags && oneToMount.tags.length) {
-              for (let tag of oneToMount.tags) {
-                let t = tag.toString();
-                tagss.add(t);
-                if (tagMounts[t]) {
-                  tagMounts[t].push(oneToMount);
-                } else {
-                  tagMounts[t] = [oneToMount];
-                }
-              }
-              oneToMount.tags = [];
-            }
-            if (oneToMount.refer_object && oneToMount.refer_object.tags && oneToMount.refer_object.tags.length) {
-              for (let tag of oneToMount.refer_object.tags) {
-                let t = tag.toString();
-                tagss.add(t);
-                if (tagMounts[t]) {
-                  tagMounts[t].push(oneToMount.refer_object);
-                } else {
-                  tagMounts[t] = [oneToMount.refer_object];
-                }
-              }
-              oneToMount.refer_object.tags = [];
-            }
-          }
-        }
-      } else {
-        let oneToMount = chunk;
-        if (oneToMount.creater) {
-          let c = oneToMount.creater.toString();
-          if ((this.state.user && c != this.state.user.id.toString()) ||
-            !this.state.user) {
-
+      function innerMount(oneToMount) {
+        if (ifCreater) {
+          if (oneToMount.creater) {
+            let c = oneToMount.creater.toString();
             creaters.add(c)
             if (createrMounts[c]) {
               createrMounts[c].push(oneToMount);
@@ -224,7 +148,31 @@ exports.mount = function (howto) {
             }
           }
         }
-        if (ifRelation &&  ['user','users'].includes(howto.chunk)) {
+        if (oneToMount.refer_object) {
+          if (ifCreater) {
+            if (oneToMount.refer_object.creater) {
+              let c = oneToMount.refer_object.creater.toString()
+              creaters.add(c)
+              if (createrMounts[c]) {
+                createrMounts[c].push(oneToMount.refer_object);
+              } else {
+                createrMounts[c] = [oneToMount.refer_object];
+              }
+            }
+          }
+          if (ifLocation) {
+            if (oneToMount.refer_object.location) {
+              let l = oneToMount.refer_object.location.toString();
+              locations.add(l);
+              if (locationMounts[l]) {
+                locationMounts[l].push(oneToMount.refer_object);
+              } else {
+                locationMounts[l] = [oneToMount.refer_object];
+              }
+            }
+          }
+        }
+        if (ifRelation &&  ['users','user'].includes(howto.chunk)) {
           if (oneToMount.id) {
             let id = oneToMount.id.toString();
             if (this.state.user && id != this.state.user.id.toString()) {
@@ -237,21 +185,20 @@ exports.mount = function (howto) {
             }
           }
         }
-        if (oneToMount.refer_object) {
-          if (oneToMount.refer_object.creater) {
-            let c = oneToMount.refer_object.creater.toString();
-            if ((this.state.user && c != this.state.user.id.toString()) ||
-              !this.state.user) {
-
-              creaters.add(c)
-              if (createrMounts[c]) {
-                createrMounts[c].push(oneToMount.refer_object);
+        if (ifTags) {
+          if (oneToMount.tags && oneToMount.tags.length) {
+            for (let tag of oneToMount.tags) {
+              let t = tag.toString();
+              tagss.add(t);
+              if (tagMounts[t]) {
+                tagMounts[t].push(oneToMount);
               } else {
-                createrMounts[c] = [oneToMount.refer_object];
+                tagMounts[t] = [oneToMount];
               }
             }
+            oneToMount.tags = [];
           }
-          if (oneToMount.refer_object.tags && oneToMount.refer_object.tags.length) {
+          if (oneToMount.refer_object && oneToMount.refer_object.tags && oneToMount.refer_object.tags.length) {
             for (let tag of oneToMount.refer_object.tags) {
               let t = tag.toString();
               tagss.add(t);
@@ -263,17 +210,48 @@ exports.mount = function (howto) {
             }
             oneToMount.refer_object.tags = [];
           }
-          if (oneToMount.refer_object.location) {
-            let l = oneToMount.refer_object.location.toString();
-            locations.add(l);
-            locationMounts[l] = [oneToMount.refer_object];
+        }
+        if (ifReply && ['comments','comment'].includes(howto.chunk)) {
+          if (oneToMount.reply_user) {
+            let r = oneToMount.reply_user.toString();
+            replys.add(r);
+            if (replyMounts[r]) {
+              replyMounts[r].push(oneToMount);
+            } else {
+              replyMounts[r] = [oneToMount];
+            }
+          }
+        }
+        if (ifFavorited && ['activitys','activity'].includes(howto.chunk) && this.state.user) {
+          if (oneToMount.refer_object && oneToMount.refer_object.id) {
+            let a = oneToMount.refer_object.id;
+            favoriteds.add(a);
+            a = a.toString();
+            if (favoritedMounts[a]) {
+              favoritedMounts[a].push(oneToMount);
+            } else {
+              favoritedMounts[a] = [oneToMount];
+            }
           }
         }
       }
+
+      let chunk = this.body.result[howto.chunk];
+      if (toString.call(chunk) == "[object Array]") {
+        for (let i = 0; i < chunk.length; i++) {
+          innerMount.call(this, chunk[i]);
+        }
+      } else {
+        innerMount.call(this, chunk);
+      }
+
       creaters = Array.from(creaters);
       relations = Array.from(relations);
       tagss = Array.from(tagss);
       locations = Array.from(locations);
+      replys = Array.from(replys);
+      favoriteds = Array.from(favoriteds);
+
       if (ifCreater && creaters.length) {
         let userdocs = yield User.findByIds(creaters, null, {id:1,nickname:1,avatar:1,gender:1});
         for (let userdoc of userdocs) {
@@ -282,14 +260,14 @@ exports.mount = function (howto) {
           }
         }
       }
-      if (ifRelation && creaters.length) {
+      if (ifRelation && creaters.length && this.state.user) {
         let follows = yield Relation.findByRelates(this.state.user.id, creaters,
           Constants.RelateType.Follow, Constants.RelateState.Unilateral)
 
         if (follows) {
           for (let follow of follows) {
             for (let cm of createrMounts[follow.relate_user.toString()]) {
-              cm.relation_follow = true;
+              cm.followed = true;
             }
           }
         }
@@ -300,19 +278,19 @@ exports.mount = function (howto) {
         if (friends) {
           for (let friend of friends) {
             for (let cm of createrMounts[friend.relate_user.toString()]) {
-              cm.relation_friend = true;
+              cm.friended = true;
             }
           }
         }
       }
-      if (ifRelation && relations.length) {
+      if (ifRelation && relations.length && this.state.user) {
         let follows = yield Relation.findByRelates(this.state.user.id, relations,
           Constants.RelateType.Follow, Constants.RelateState.Unilateral)
 
         if (follows) {
           for (let follow of follows) {
             for (let rm of relationMounts[follow.relate_user.toString()]) {
-              rm.relation_follow = true;
+              rm.followed = true;
             }
           }
         }
@@ -323,13 +301,13 @@ exports.mount = function (howto) {
         if (friends) {
           for (let friend of friends) {
             for (let rm of relationMounts[friend.relate_user.toString()]) {
-              rm.relation_friend = true;
+              rm.friended = true;
             }
           }
         }
       }
       if (ifTags && tagss.length) {
-        let tagdocs = yield Tag.findByIds(tagss, null, {id:1,type:1,name:1});
+        let tagdocs = yield Tag.findByIds(tagss, null, {id:1,name:1});
         for (let tagdoc of tagdocs) {
           for (let tm of tagMounts[tagdoc.id.toString()]) {
             if (tm.tags && tm.tags.length) {
@@ -341,10 +319,29 @@ exports.mount = function (howto) {
         }
       }
       if (ifLocation && locations.length) {
-        let locationdocs = yield Location.findByIds(locations, null, {id:1,city:1,address:1});
+        let locationdocs = yield Location.findByIds(locations, null, {id:1,province:1,city:1,address:1});
         for (let locationdoc of locationdocs) {
           for (let lm of locationMounts[locationdoc.id.toString()]) {
             lm.location = locationdoc;
+          }
+        }
+      }
+      if (ifReply && replys.length) {
+        let replydocs = yield User.findByIds(replys, null, {id:1,nickname:1,avatar:1,gender:1});
+        for (let replydoc of replydocs) {
+          for (let rm of replyMounts[replydoc.id.toString()]) {
+            rm.reply_user = replydoc;
+          }
+        }
+      }
+      if (ifFavorited && favoriteds.length) {
+        let favoritedocs = yield Subject.find(
+          {refer_object: {$in: favoriteds}, creater: this.state.user.id, refer_type: Activity.modelName},
+          {refer_object:1}
+        );
+        for (let favoritedoc of favoritedocs) {
+          for (let fm of favoritedMounts[favoritedoc.refer_object.toString()]) {
+            fm.favorited = true;
           }
         }
       }

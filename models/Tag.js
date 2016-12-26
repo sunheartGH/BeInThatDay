@@ -8,9 +8,7 @@ let DocSchema = new Schema({
   created_at: {type: Date, default: Date.now},                //创建日期
   updated_at: {type: Date, default: Date.now},                //更新日期
   parent: {type: Schema.ObjectId, ref: 'Tag'},                //父标签
-  type: String,                                               //标签类型
   name: String,                                               //标签名
-  depict: String                                              //描述
 });
 
 let method = {

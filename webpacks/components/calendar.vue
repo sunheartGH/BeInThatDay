@@ -1,15 +1,11 @@
 <template>
 <div class="calendar">
-  <div justify="center" class="title">
-    <button v-on:click="process(-1)">
-      < 前进
-    </button>
-    <button>
-      {{calendar.month}}
-    </button>
-    <button v-on:click="process(1)">
-      后退 >
-    </button>
+  <div class="title">
+    <div class="ui buttons">
+      <button class="ui labeled icon button" @click="process(-1)"><i class="left chevron icon"></i>上个月</button>
+      <button class="ui button"> {{calendar.month}} </button>
+      <button class="ui right labeled icon button" @click="process(1)">下个月<i class="right chevron icon"></i> </button>
+    </div>
   </div>
   <div class="bar">
     <div>Su</div>
@@ -21,12 +17,14 @@
     <div>Sa</div>
   </div>
   <div v-for="week in calendar.datas" class="week">
-    <div v-for="day in week" class="day" v-bind:class="day.type"
-    v-bind:style="day.show" v-on:click="dayClick(day.date,day.title)">
-
-      <h3>{{day.day}}</h3>
-      <h3>{{day.title}}</h3>
-    </div>
+    <div v-for="day in week" class="day" :class="day.type" @click="dayClick(day.date, day.title)">
+      <img v-if="day.show" :src="day.show">
+      <div class="daynum">
+        {{day.day}}
+      </div>
+      <div class="daytitle">
+        {{day.title}}
+      </div>
   </div>
 </div>
 </template>
@@ -60,7 +58,12 @@ export default {
         until: calendar.datas[5][6].str,
       };
       utils.useToken(params);
-      this.$http.get("/activitys/calendar",{
+
+      if (this.oncity) {
+        params.city = this.oncity;
+      }
+
+      this.$http.get("activitys/calendar",{
         params: params
       }).then((res) => {
         if (utils.isResOk(res)) {
@@ -74,8 +77,7 @@ export default {
                   this.$set(day, "title", ro.title)
                   this.$set(day, "cover_picurl", ro.cover_picurl)
                   this.$set(day, "start_time", ro.start_time)
-                  let bg = "background:url("+ro.cover_picurl+")";
-                  this.$set(day, "show", bg + " no-repeat;");
+                  this.$set(day, "show", ro.cover_picurl);
                 }
               }
             }
@@ -87,14 +89,23 @@ export default {
       this.calendar = calendar;
     }
   },
+  props: ["oncity","refresh"],
+  watch: {
+    oncity() {
+      this.process();
+    },
+    refresh(val, old) {
+      if (val) {
+        this.process();
+      }
+    }
+  }
 }
 </script>
 
 <style>
 .title {
   text-align: center;
-  height: 20px;
-  background-color: #2db7f5;
 }
 .title button {
   background-color: #ff9900;
@@ -105,7 +116,7 @@ export default {
   margin: 3px;
   clear: both;
   display: flex;
-  background-color: #00cc66;
+  background-color: #fff;
 }
 .bar div {
   flex: 1;
@@ -122,24 +133,41 @@ export default {
   flex: 1;
   height: 120px;
   float: left;
-  background-color: #f5f7f9;
+  background-color: #fff;
   margin: 1px;
-  border-radius: 6px;
+  position: relative;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.15);
 }
-.cur{
-  color: #000;
+.day img {
+  height: 120px;
+  width: 100%;
 }
-.today{
+.daynum {
+  top:0px;
+  position: absolute;
+  background-color: rgba(0,0,0,0.1);
+  width: 20px;
+}
+.daytitle {
+  bottom: 0px;
+  position: absolute;
+  color: white;
+  height: auto;
+  background: linear-gradient(transparent,rgba(0,0,0,0.1) 20%,rgba(0,0,0,0.2) 35%,rgba(0,0,0,0.6) 65%,rgba(0,0,0,0.9));
+}
+.cur .daynum {
+  color: #fff;
+}
+.today .daynum {
   color: #3399ff;
 }
 .cur:hover {
-  background-color: #2db7f5;
   cursor: pointer;
 }
-.pre{
-  color: #aaa;
+.pre .daynum{
+  color: #cdbfe3;
 }
-.nex{
-  color: #aaa;
+.nex .daynum{
+  color: #cdbfe3;
 }
 </style>

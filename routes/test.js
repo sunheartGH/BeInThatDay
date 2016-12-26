@@ -6,10 +6,12 @@ module.exports = class test {
 
   //@route(get /test)
   * showTest () {
-    let subjects = yield Subject.find();
-    subjects.forEach((e,i,a) => {
-      a[i] = e.toObject();
-    });
+    let subjects = yield Subject.findOne();
+    // subjects.forEach((e,i,a) => {
+    //   a[i] = e.toObject();
+    // });
+    subjects = subjects.toObject();
+    subjects.user = {test:"test"}
     this.body = AppInfo({test: subjects});
   }
 };

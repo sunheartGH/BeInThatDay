@@ -1,5 +1,27 @@
-const {AppInfo, Codes, Schemas, Constants, Cryptos} = require('../utils');
+const {AppInfo, Codes, Schemas, Constants, Cryptos, Utils} = require('../utils');
 const {User, Relation, Tag} = require("../models");
+
+function userFilter (obj) {
+  let filter = {
+    nickname: 1,
+    gender: 1,
+    avatar: 1,
+    home: 1,
+    depict: 1,
+    tags: 1,
+    favor_subjects: 1,
+    create_subjects: 1,
+    followed_count: 1,
+    follow_count: 1,
+    friend_count: 1,
+    star_score: 1,
+    star_count: 1,
+  }
+  if (obj) {
+    Object.assign(filter, obj);
+  }
+  return filter;
+}
 
 module.exports = class user {
   constructor () {}
@@ -7,9 +29,9 @@ module.exports = class user {
   //@route(post /user)
   //#captcha()
   * newUser () {
-    let {username, email, phone, password} = this.request.body;
+    let {nickname, username, email, phone, password} = this.request.body;
     //创建用户
-    let account= {username, email, phone};
+    let account= {nickname, username, email, phone};
     let user = yield User.findByAccount(account); //验证用户是否重复
     if (user) {
       //已创建账号
@@ -28,25 +50,11 @@ module.exports = class user {
 
   //@route(get /user/:uid)
   //#token()
-  //#mount({chunk:user,mounts:[relation,tags]});
+  //#mount({chunk:user,mounts:[relation,tags]})
   * showUser () {
     //显示用户信息
     let {uid} = this.params;
-    let filter = {
-      nickname: 1,
-      gender: 1,
-      avatar: 1,
-      home: 1,
-      depict: 1,
-      tags: 1,
-      favor_subjects: 1,
-      create_subjects: 1,
-      followed_count: 1,
-      follow_count: 1,
-      friend_count: 1,
-      star_score: 1,
-      star_count: 1,
-    }
+    let filter = userFilter();
     if (this.state.user.id.toString() == uid) {
       filter.username = 1,
       filter.email = 1;
@@ -93,8 +101,8 @@ module.exports = class user {
 
     yield User.updateSetDoc(this.state.user.id, {nickname,gender,avatar,home,depict});
 
-    if (tags) {
-      let findTags = yield Tag.findByIds(tags, {type: User.modelName});
+    if (tags && tags.length) {
+      let findTags = yield Tag.findByIds(tags);
       if (tags.length == findTags.length) {
         yield User.updateSetDoc(this.state.user.id, {tags});
       } else {
@@ -102,6 +110,56 @@ module.exports = class user {
         return;
       }
     }
+    this.body = AppInfo({nickname,gender,avatar,home,depict,tags});
   }
 
+  //@route(get /users/:uid/:rtype)
+  //#token()
+  //#mount({chunk:users,mounts:[relation,tags]})
+  * showRelationUsers() {
+    //显示用户好友列表，好友列表仅限当前用户自己查看
+    let curuid = this.state.user.id.toString();
+    let {uid, rtype} = this.params;
+    let pageObj = Utils.parsePageTime(this.query);
+
+    let relaions = [];
+    let users = [];
+    let query;
+    let mapRelations = function (e) {return e.relate_user}
+    if (rtype == Constants.RelateType.Friend && curuid == uid) {
+      query = {
+        creater:curuid,
+        relate_type: Constants.RelateType.Friend,
+        relate_state: Constants.RelateState.Bilateral,
+      };
+    } else if (rtype == Constants.RelateType.Follow) {
+      query = {
+        creater: uid,
+        relate_type: Constants.RelateType.Follow,
+        relate_state: Constants.RelateState.Unilateral,
+      };
+    } else if (rtype == Constants.RelateType.Followed) {
+      query = {
+        relate_user: uid,
+        relate_type: Constants.RelateType.Follow,
+        relate_state: Constants.RelateState.Unilateral,
+      };
+      mapRelations = function (e) {return e.creater}
+    }
+    if (query) {
+      relaions = yield Relation.findByPage(pageObj, query);
+    }
+    if (relaions && relaions.length) {
+      let userIds = relaions.map(mapRelations);
+      users = yield User.findByIds(userIds, null, userFilter());
+    }
+    let page = pageObj.page;
+    let size = 0;
+    if (users && users.length) {
+      size = users.length;
+    } else {
+      users = [];
+    }
+    this.body = AppInfo({page, size, users});
+  }
 };

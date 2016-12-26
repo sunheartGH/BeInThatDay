@@ -32,7 +32,9 @@ let method = {
         model: refname
       }
       let result = yield this.findOne(query).populate(populate);
-      result = result.toObject();
+      if (result) {
+        result = result.toObject();
+      }
       if (select) {
         Utils.selected(result, {refer_object:select});
       }
@@ -46,7 +48,7 @@ let method = {
         query.refer_object = ref;
         query.refer_type = refname;
       } else {
-        query = {refer_object: subid, refer_type: refname};
+        query = {refer_object: ref, refer_type: refname};
       }
       let results;
       if (select && select.refer_object) {
@@ -66,32 +68,26 @@ let method = {
     }
   },
 
-  * findByPageTakeRef (page, refname, uid, select) {
+  * findByPageTakeRef (page, refname, query, select, filter) {
     if (page && refname) {
-      let query = {created_at:{}, refer_type: refname};
+      query = query || {created_at:{}, refer_type: refname};
       if (page.lastime) {
         Object.assign(query.created_at, {$lt: page.lastime});
       }
       if (page.firstime) {
         Object.assign(query.created_at, {$gt: page.firstime});
       }
-      if (uid) {
-        query.creater = mongoose.Types.ObjectId(uid.toString());
-      }
-      let results
-      if (select && select.refer_object) {
-        let populate = {
-          path: "refer_object",
-          model: refname
-        }
-        results = yield this.find(query).skip(page.offset).limit(page.size).populate(populate);
-        Utils.selected(results, {refer_object:select});
-      } else {
-        results = yield this.find(query).skip(page.offset).limit(page.size);
-      }
+      let populate = {
+        path: "refer_object",
+        model: refname
+      };
+      let results = yield this.find(query, select).skip(page.offset).limit(page.size).populate(populate);
       results.forEach((e,i,a) => {
         a[i] = e.toObject();
       });
+      if (filter) {
+        Utils.selected(results, {refer_object:filter});
+      }
       return results;
     }
   },
