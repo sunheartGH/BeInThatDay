@@ -27,7 +27,6 @@ module.exports = class user {
   constructor () {}
 
   //@route(post /user)
-  //#captcha()
   * newUser () {
     let {nickname, username, email, phone, password} = this.request.body;
     //创建用户

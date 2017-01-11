@@ -5,6 +5,10 @@ module.exports = {
   mongodb: {
     url: 'mongodb://127.0.0.1:27017/work'
   },
+  redis: {
+    host: '127.0.0.1',
+    port: 6379,
+  },
   staticsConf: path.join(__dirname, '../public'),
   renderConf: path.join(__dirname, '../view/config'),
   routerCacheConf: {

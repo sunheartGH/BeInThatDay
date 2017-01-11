@@ -3,6 +3,7 @@ import VueRouter from 'vue-router'
 import config from 'config'
 import bus from 'bus'
 import utils from 'utils'
+import Message from './components/message.vue'
 import Treat from './components/treat.vue'
 import Login from './components/login.vue'
 // Vue.use(VueRouter)
@@ -39,6 +40,13 @@ const routes = [
     component(resolve) {
         require(['./views/treats.vue'], resolve);
     }
+  },
+  {
+    name: 'search',
+    path: '/search',
+    component(resolve) {
+        require(['./views/search.vue'], resolve);
+    }
   }
 ]
 const router = new VueRouter({
@@ -59,14 +67,23 @@ new Vue({
 
     bus.$on('logouted', () => {
       this.goHome();
-      this.refresh =  Math.random() + "home";
     });
 
     bus.$on('logined', () => {
       if (this.$router.app.$route.name == 'home') {
         this.goHome();
-        this.refresh =  Math.random() + "home";
       }
+    });
+
+    bus.$on('usercalendar', (userId) => {
+      this.$router.push({ path: '/home', query:{userId} });
+      this.refresh = Math.random() + "home";
+    });
+
+
+    bus.$on('showmessage', (userId) => {
+      this.$router.push({ path: '/profile/'+userId, query: { infoshow: 'messages' } });
+      this.refresh = Math.random() + "profile";
     });
 
     bus.$on('activityclick', (activityId) => {
@@ -119,10 +136,15 @@ new Vue({
   methods: {
     goHome() {
       this.$router.push({name: 'home'});
+      this.refresh = Math.random() + "home";
+    },
+    goSearch() {
+      this.$router.push({name: 'search'});
     }
   },
   components: {
     "app-login":Login,
+    "app-message":Message,
     "app-treat":Treat,
   },
   router,

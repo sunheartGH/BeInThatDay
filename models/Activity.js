@@ -440,41 +440,65 @@ let method = {
       let tagIds = yield Tag.find({name:{$regex: keyword, $options:"g"}}, {_id:1}).sort({created_at: 1}).limit(100);
       tagIds = tagIds.map(e => e.id);
 
-      // let locationIds = yield Location.find({$or:[
-      //   {province:{$regex: keyword, $options:"g"}},
-      //   {city:{$regex: keyword, $options:"g"}},
-      //   {address:{$regex: keyword, $options:"g"}},
-      // ]}, {_id:1}).sort({created_at: -1}).limit(100);
-      // locationIds = locationIds.map(e => e.id);
-
       let aggregate = [
         {$match: {refer_type: refname, expose_level: Constants.ExposeLevel.Public}},
         {$lookup: {from: refname, localField: "refer_object", foreignField: "_id", as: "refer_object"}},
-        {$lookup: {from: relname, localField: "creater", foreignField: "relate_user", as: "relate_user"}},
         {$unwind : "$refer_object" },
         {$match: {"refer_object.created_at": rs, }},
+        {$sort: {"refer_object._id": 1, "favorite_count": -1}},
+        {$group: {_id: "$refer_object._id", activity: {$first : "$$ROOT"}}},
+        {$project: {
+          _id: "$activity._id",
+          id:"$_id",
+          creater: "$activity.creater",
+          created_at: "$activity.created_at",
+          updated_at: "$activity.updated_at",
+          refer_type: "$activity.refer_type",
+          expose_level: "$activity.expose_level",
+          star_score: "$activity.star_score",
+          star_count: "$activity.star_count",
+          comment_count: "$activity.comment_count",
+          favorite_count: "$activity.favorite_count",
+          __v : "$activity.__v",
+          refer_object: {
+            _id: "$activity.refer_object._id",
+            id: "$activity.refer_object._id",
+            title: "$activity.refer_object.title",
+            cover_picurl: "$activity.refer_object.cover_picurl",
+            start_time: "$activity.refer_object.start_time",
+            creater: "$activity.refer_object.creater",
+            end_time: "$activity.refer_object.end_time",
+            summary: "$activity.refer_object.summary",
+            content: "$activity.refer_object.content",
+            fee: "$activity.refer_object.fee",
+            location: "$activity.refer_object.location",
+            tags: "$activity.refer_object.tags",
+          }
+        }},
+        {$lookup: {from: Location.modelName, localField: "refer_object.location", foreignField: "_id", as: "location_to"}},
         {$match: {$or:[
           {"refer_object.title": {$regex: keyword, $options:"g"}},
           {"refer_object.content": {$regex: keyword, $options:"g"}},
           {"refer_object.tags": {$in: tagIds}},
-          // {"refer_object.location": {$in: locationIds}},
+          {"location_to":{$elemMatch:{$or:[
+            {"city":{$regex: keyword, $options:"g"}},
+            {"address":{$regex: keyword, $options:"g"}},
+          ]}}}
         ]}},
         {$sort: {favorite_count: -1, "refer_object.created_at": -1}},
         {$skip : page.offset},
         {$limit : page.size},
         {$project: {
-          _id: 1,id:"$_id",creater: 1,refer_type: 1,expose_level: 1,
+          _id: 1,id:"$_id",comment_count: 1,favorite_count:1,refer_type: 1,expose_level: 1,
           refer_object: {
-            creater: 1,title: 1,summary: 1,tags: 1,
+            title: 1,summary: 1,start_time: 1,end_time: 1,
           }
         }}
       ];
 
       let results = yield Subject.aggregate(aggregate).exec();
       if (select) {
-        Utils.selected(results, {relate_user: 0, refer_object:select});
-      } else {
-        Utils.selected(results, {relate_user:0});
+        Utils.selected(results, {refer_object:select});
       }
       return results;
     }
@@ -494,24 +518,51 @@ let method = {
       let tagIds = yield Tag.find({name:{$regex: keyword, $options:"g"}}, {_id:1}).sort({created_at: 1}).limit(100);
       tagIds = tagIds.map(e => e.id);
 
-      // let locationIds = yield Location.find({$or:[
-      //   {province:{$regex: keyword, $options:"g"}},
-      //   {city:{$regex: keyword, $options:"g"}},
-      //   {address:{$regex: keyword, $options:"g"}},
-      // ]}, {_id:1}).sort({created_at: -1}).limit(100);
-      // locationIds = locationIds.map(e => e.id);
-
       let aggregate = [
         {$match: {refer_type: refname}},
         {$lookup: {from: refname, localField: "refer_object", foreignField: "_id", as: "refer_object"}},
         {$lookup: {from: relname, localField: "creater", foreignField: "relate_user", as: "relate_user"}},
         {$unwind : "$refer_object" },
         {$match: {"refer_object.created_at": rs}},
+        {$sort: {"refer_object._id": 1, "favorite_count": -1}},
+        {$group: {_id: "$refer_object._id", activity: {$first : "$$ROOT"}}},
+        {$project: {
+          _id: "$activity._id",
+          id:"$_id",
+          creater: "$activity.creater",
+          created_at: "$activity.created_at",
+          updated_at: "$activity.updated_at",
+          refer_type: "$activity.refer_type",
+          expose_level: "$activity.expose_level",
+          star_score: "$activity.star_score",
+          star_count: "$activity.star_count",
+          comment_count: "$activity.comment_count",
+          favorite_count: "$activity.favorite_count",
+          __v : "$activity.__v",
+          refer_object: {
+            _id: "$activity.refer_object._id",
+            id: "$activity.refer_object._id",
+            title: "$activity.refer_object.title",
+            cover_picurl: "$activity.refer_object.cover_picurl",
+            start_time: "$activity.refer_object.start_time",
+            creater: "$activity.refer_object.creater",
+            end_time: "$activity.refer_object.end_time",
+            summary: "$activity.refer_object.summary",
+            content: "$activity.refer_object.content",
+            fee: "$activity.refer_object.fee",
+            location: "$activity.refer_object.location",
+            tags: "$activity.refer_object.tags",
+          }
+        }},
+        {$lookup: {from: Location.modelName, localField: "refer_object.location", foreignField: "_id", as: "location_to"}},
         {$match: {$or:[
           {"refer_object.title": {$regex: keyword, $options:"g"}},
           {"refer_object.content": {$regex: keyword, $options:"g"}},
           {"refer_object.tags": {$in: tagIds}},
-          // {"refer_object.location": {$in: locationIds}},
+          {"location_to":{$elemMatch:{$or:[
+            {"city":{$regex: keyword, $options:"g"}},
+            {"address":{$regex: keyword, $options:"g"}},
+          ]}}}
         ]}},
         {$match: {$or:[
           {creater: mongoose.Types.ObjectId(curuid.toString())},
@@ -543,9 +594,9 @@ let method = {
         {$skip : page.offset},
         {$limit : page.size},
         {$project: {
-          _id: 1,id:"$_id",creater: 1,refer_type: 1,expose_level: 1,
+          _id: 1,id:"$_id",comment_count: 1,favorite_count:1,refer_type: 1,expose_level: 1,
           refer_object: {
-            creater: 1,title: 1,summary: 1,tags: 1,
+            title: 1,summary: 1,start_time: 1,end_time: 1,
           }
         }}
       ];

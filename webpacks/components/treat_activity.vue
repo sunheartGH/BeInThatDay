@@ -9,7 +9,7 @@
       </div>
       <div class="two wide field">
         <label>Expose Level</label>
-        <select class="ui dropdown exposelevel" v-model="activity.expose_level">
+        <select class="ui dropdown exposelevel">
           <option v-for="expose in exposes" :value="expose.value">
             {{expose.text}}
           </option>
@@ -174,8 +174,8 @@ export default {
         }
 
         if (adata.refer_object.location) {
-          this.activity.expose_level = adata.refer_object.location;
-          this.$set(this.raw, "expose_level", rawData.refer_object.location);
+          this.activity.location = adata.refer_object.location;
+          this.$set(this.raw, "location", rawData.refer_object.location);
         } else {
           this.activity.location = {};
           this.$set(this.raw, "location", {});
@@ -194,20 +194,22 @@ export default {
       $(".ui.dropdown.exposelevel").dropdown("set selected", this.activity.expose_level);
       $(".ui.dropdown.exposelevel").dropdown({
         onChange: (value, text, $selectedItem) => {
-          this.activity.expose_level = value.trim();
+          if (value.trim()) {
+            this.activity.expose_level = value.trim();
+          }
         }
       });
     },
     treatActivity () {
       if (quill.getText().trim()) {
-        this.content = quill.root.innerHTML;
+        this.activity.content = quill.root.innerHTML;
         let summary = quill.getText().trim();
-        let summaryLength = 250;
+        let summaryLength = 140;
         summary = summary.slice(0, summaryLength);
         if (summary.length == summaryLength) {
           summary += " ...";
         }
-        this.summary = summary;
+        this.activity.summary = summary;
       }
       if(this.activity.id && utils.ifUser(this.creater.id)
         && utils.haveToken()){ //修改
@@ -247,7 +249,7 @@ export default {
           utils.useToken(params);
 
           //添加loading图
-          $(".ui.form.segment.treatactivity").addClass("loading");
+          $(".ui.form.segment.treatactivity").toggleClass("loading");
 
           this.$http.put("activity/" + this.activity.id, body, {params}).then((res) => {
             if (utils.isResOk(res)) {
@@ -261,40 +263,44 @@ export default {
                 alert('no activity field changed');
               }
             }
-
-            //移除loading图
-            $(".ui.form.segment.treatactivity").removeClass("loading");
           }).catch((err) => {
             console.log(err);
-
+          }).finally(()=>{
             //移除loading图
-            $(".ui.form.segment.treatactivity").removeClass("loading");
-
-          });
+            $(".ui.form.segment.treatactivity").toggleClass("loading");
+          })
         } else {
           alert('no change to save');
         }
       } else if (utils.haveToken()) {//新建
         //判断必要值存在和其类型
-        let fields = ["title","cover_picurl","content","summary","start_time","end_time"];
+        let body = {};
+        let fields = ["title","cover_picurl","content","summary","start_time","end_time", "expose_level"];
         for (let field of fields) {
           if (!this.activity[field]) {
-            alert(field + "can't be null");
+            alert(field + " can't be null");
             return;
           }
+          body[field] = this.activity[field];
+        }
+
+        if (this.activity.site) {
+          body.site = this.activity.site
+        }
+        if (this.activity.fee) {
+          body.fee = this.activity.fee
         }
 
         if (this.activity.location && this.activity.location.id) {
-          this.activity.location = this.activity.location.id
+          body.location = this.activity.location.id
         }
 
         if (this.activity.tags && this.activity.tags.length) {
           let tagIds = this.activity.tags.map(e => e.id);
-          this.activity.tags = tagIds;
+          body.tags = tagIds;
         }
 
-
-        if (!this.validActivity(this.activity)) {
+        if (!this.validActivity(body)) {
           return;
         }
 
@@ -302,29 +308,26 @@ export default {
         utils.useToken(params);
 
         //添加loading图
-        $(".ui.form.segment.treatactivity").addClass("loading");
+        $(".ui.form.segment.treatactivity").toggleClass("loading");
 
-        this.$http.post("activity", this.activity, {params}).then((res) => {
+        this.$http.post("activity", body, {params}).then((res) => {
           if (utils.isResOk(res)) {
             let activity = res.body.result.activity;
             if (activity && activity.id) {
               alert('treat activity success');
 
               //操作完成，发出事件
-              bus.$emit("activitytreated");
+              bus.$emit("activitytreated", activity.id);
             } else {
               alert('treat activity failed');
             }
           }
-
-          //移除loading图
-          $(".ui.form.segment.treatactivity").removeClass("loading");
         }).catch((err) => {
           console.log(err);
-
+        }).finally(()=>{
           //移除loading图
-          $(".ui.form.segment.treatactivity").removeClass("loading");
-        });
+          $(".ui.form.segment.treatactivity").toggleClass("loading");
+        })
 
       } else {
         alert("Invalid Failed")
@@ -371,6 +374,10 @@ export default {
           end_time = new Date(end_time.toString());
           if (end_time.getTime() <= new Date().getTime()) {
             alert("end_time must greater than now");
+            return;
+          }
+          if (start_time && start_time.getTime() >= end_time.getTime()) {
+            alert("end_time must greater than start_time");
             return;
           }
           activity.end_time = new Date(end_time.getTime() + end_time.getTimezoneOffset()*60000)

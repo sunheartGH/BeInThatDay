@@ -81,13 +81,6 @@ exports.iftoken = function (){
   }
 }
 
-exports.captcha = function (){
-  return function* (next){
-    console.log("captcha validate");
-    yield next;
-  }
-}
-
 exports.mount = function (howto) {
   return function* (next) {
     yield next;

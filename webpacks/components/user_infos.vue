@@ -1,12 +1,12 @@
 <template>
 <div>
-  <div id="uinfos" class="ui five item stackable tabs menu">
+  <div id="uinfos" class="ui six item stackable tabs menu">
     <a class="active item" data-tab="activitys">Activitys</a>
     <a class="item" data-tab="comments">Comments</a>
     <a class="item" data-tab="friends" v-show="showSelfs">Friends</a>
     <a class="item" data-tab="follows">Follows</a>
     <a class="item" data-tab="followeds">Followeds</a>
-    <!-- <a class="item" data-tab="messages">Messages</a> -->
+    <a class="item" data-tab="messages" v-show="showSelfs">Messages</a>
   </div>
   <div class="ui bottom attached active tab segment" data-tab="activitys">
     <app-uactivitys :userid='userid'></app-uactivitys>
@@ -15,17 +15,17 @@
     <app-ucomments :userid='userid'></app-ucomments>
   </div>
   <div class="ui bottom attached tab segment" data-tab="friends" v-show="showSelfs">
-    <app-users :userid='userid' :rtype='friend'></app-users>
+    <app-urelations :userid='userid' :rtype='friend'></app-urelations>
   </div>
   <div class="ui bottom attached tab segment" data-tab="follows">
-    <app-users :userid='userid' :rtype='follow'></app-users>
+    <app-urelations :userid='userid' :rtype='follow'></app-urelations>
   </div>
   <div class="ui bottom attached tab segment" data-tab="followeds">
-    <app-users :userid='userid' :rtype='followed'></app-users>
+    <app-urelations :userid='userid' :rtype='followed'></app-urelations>
   </div>
-  <!-- <div class="ui bottom attached tab segment" data-tab="messages">
-  <app-umessages :userid='userid'></app-umessages>
-</div> -->
+  <div class="ui bottom attached tab segment" data-tab="messages" v-show="showSelfs">
+    <app-umessages :userid='userid'></app-umessages>
+  </div>
 </div>
 </template>
 
@@ -35,7 +35,7 @@ import utils from "utils";
 import UserActivitys from "./user_activitys.vue";
 import UserComments from "./user_comments.vue";
 import UserMessages from "./user_messages.vue";
-import Users from "./users.vue";
+import UserRelations from "./user_relations.vue";
 
 export default {
   data () {
@@ -49,33 +49,46 @@ export default {
   activated() {
   },
   mounted() {
-    $('.ui.item.tabs.menu .item').tab();
+    this.changeTab();
     this.showInfos();
   },
   methods: {
+    changeTab(tab) {
+      tab = tab || this.show;
+      if (tab) {
+        $("#uinfos").tab('change tab', tab);
+        $('#uinfos .item').tab();
+      } else {
+        $('#uinfos .item').tab();
+        $('#uinfos').tab();
+      }
+    },
     showInfos() {
       if (utils.ifUser(this.userid)) {
         $('#uinfos').removeClass("four");
-        $('#uinfos').addClass("five");
+        $('#uinfos').addClass("six");
         this.showSelfs = true;
       } else {
-        $('#uinfos').removeClass("five");
+        $('#uinfos').removeClass("six");
         $('#uinfos').addClass("four");
         this.showSelfs = false;
       }
     },
   },
-  props: ["userid"],
+  props: ["userid", "show"],
   watch: {
     userid() {
       this.showInfos();
     },
+    show(val) {
+      this.changeTab(val);
+    }
   },
   components: {
     "app-uactivitys": UserActivitys,
     "app-ucomments": UserComments,
     "app-umessages": UserMessages,
-    "app-users": Users,
+    "app-urelations": UserRelations,
   },
 }
 </script>
@@ -88,6 +101,7 @@ export default {
   border: 0;
   border-radius: 0;
   margin-top: 1rem;
+  margin-bottom: 0;
 }
 .ui.item.tabs.menu .item[data-tab="activitys"] {
   color: #fff;

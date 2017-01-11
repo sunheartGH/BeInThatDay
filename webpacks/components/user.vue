@@ -34,6 +34,7 @@
     <div>favor_subjects: {{user.favor_subjects}}</div>
     <div>create_subjects: {{user.create_subjects}}</div>
     <div>follow_count: {{user.follow_count}}</div>
+    <div>followed_count: {{user.followed_count}}</div>
     <div>star_score: {{user.star_score}}</div>
     <div>star_count: {{user.star_count}}</div>
   </div>

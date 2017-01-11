@@ -45,9 +45,10 @@ ckr(router, "./routes", {plugin: [prehandle, ckrPlugins], predir: "./pres"});
 app.use(router.routes());
 app.use(router.allowedMethods());
 
-http.createServer(app.callback()).listen(config.port, () => {
+const server = http.createServer(app.callback()).listen(config.port, () => {
   console.log("Server listening on: ", config.port);
 });
+require('./utils/Socket.js').init(server);
 
 // let options = {
 //   key: fs.readFileSync("./certs/server.key"),

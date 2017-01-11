@@ -11,45 +11,41 @@ module.exports = class star {
     let {target_user, target_object, target_type, star_score} = this.request.body;
     let star = {
       creater: this.state.user.id,
-      star_score
+      star_score,
+      target_type,
     }
-    let user = yield User.findById(target_user);
-    if (user) {
-      star.target_user = user.id;
-      yield User.updateStar(user, star_score);
-    } else {
-      this.body = AppInfo.Msg("target_user not found", Codes.Star.TARGET_USER_FOUND);
-      return;
-    }
-    let target = Star.findByTarget(this.state.user.id, target_object, target_type);
+    let target = yield Star.findByTarget(this.state.user.id, target_object, target_type);
     if (target) {
       this.body = AppInfo.Msg("target has been stared", Codes.Common.REPEAT_WRONG);
       return;
     }
+    let user = yield User.findById(target_user);
+    if (!user) {
+      this.body = AppInfo.Msg("target_user not found", Codes.Star.TARGET_USER_FOUND);
+      return;
+    }
+    let model;
     if (target_type == Subject.modelName) {
-      let subject = Subject.findById(target_object);
-      if (subject && subject.creater == user.id) {
-        star.target_type = Subject.modelName;
-        star.target_object = subject.id;
-        yield Subject.updateStar(subject, star_score);
-      }
+      model = Subject
     } else if (target_type == Comment.modelName) {
-      let comment = Comment.findById(target_object);
-      if (comment && comment.creater == user.id) {
-        star.target_type = Comment.modelName;
-        star.target_object = comment.id;
-        yield Comment.updateStar(comment, star_score);
+      model = Comment
+    }
+    if (model) {
+      let tobj = yield model.findById(target_object);
+      if (tobj && tobj.creater.toString() == user.id.toString()) {
+        star.target_user = user.id;
+        yield User.updateStar(user, star_score);
+
+        star.target_object = tobj.id;
+        yield model.updateStar(tobj, star_score);
+
+        star = yield Star.saveDoc(star);
+        this.body = AppInfo({star});
+      } else {
+        this.body = AppInfo.Msg("target_object not found", Codes.Star.TARGET_OBJECT_FOUND);
       }
+    } else {
+      this.body = AppInfo.Msg("service logic error", Codes.Common.SERVICE_LOGIC_ERROR);
     }
-    if (!star.target_type) {
-      this.body = AppInfo.Msg("target_type is not support", Codes.Star.TARGET_TYPE_DATA);
-      return;
-    }
-    if (!star.target_object) {
-      this.body = AppInfo.Msg("target_object not found", Codes.Star.TARGET_OBJECT_FOUND);
-      return;
-    }
-    star = yield Star.saveDoc(star);
-    this.body = AppInfo({star});
   }
 };

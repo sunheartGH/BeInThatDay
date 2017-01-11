@@ -1,4 +1,4 @@
-const {AppInfo, Codes, Schemas, Constants} = require('../utils');
+const {AppInfo, Codes, Schemas, Constants, Captcha} = require('../utils');
 const validator = require('validator');
 
 module.exports = class token {
@@ -13,7 +13,15 @@ module.exports = class token {
       this.body = AppInfo.Msg("token already exists, will not created new token", Codes.Common.TOKEN_EXIST);
       return;
     }
-    let {username, email, phone, password} = this.request.body;
+    let {username, email, phone, password, captcha} = this.request.body;
+
+    //验证码验证
+    let captchaRes = yield Captcha.verifyCaptcha(captcha)
+    if (!captchaRes) {
+      this.body = AppInfo.Msg("captcha is wrong", Codes.Common.CAPTCHA_WRONG);
+      return;
+    }
+
     if (username || email || phone) { //验证账号存在
       if (username && !Constants.usernameRgx.test(username)) { //验证用户名格式
         this.body = AppInfo.Msg("wrong username format", Codes.User.USERNAME_DATA);

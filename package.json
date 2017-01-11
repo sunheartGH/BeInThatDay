@@ -16,6 +16,7 @@
     "comment-koa-router": "^0.2.7",
     "config": "1.24.0",
     "file-type": "3.8.0 ",
+    "gm": "^1.23.0",
     "koa": "1.2.0",
     "koa-bodyparser": "2.2.0",
     "koa-compress": "1.0.9",
@@ -28,6 +29,10 @@
     "moment": "2.15.2",
     "mongoose": "4.7.1",
     "node-dir": "0.1.15",
+    "pleasejs": "^0.4.2",
+    "randomstring": "^1.1.5",
+    "redis": "^2.6.3",
+    "socket.io": "^1.7.2",
     "validator": "5.3.0"
   }
 }

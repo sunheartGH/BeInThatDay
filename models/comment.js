@@ -50,6 +50,19 @@ let method = {
     }
   },
 
+  * countByPageUnderObject (page, under_type, under_object) {
+    if (page && under_type && under_object) {
+      let query = {created_at:{}, under_object, under_type};
+      if (page.lastime) {
+        Object.assign(query.created_at, {$lt: page.lastime});
+      }
+      if (page.firstime) {
+        Object.assign(query.created_at, {$gt: page.firstime});
+      }
+      return yield this.count(query);
+    }
+  },
+
   * findCreatedByPageOnExpose (page, under_type, curuid, uid, query, select) {
     if (page && under_type && curuid && uid) {
       let rs = {created_at:{}, under_type};

@@ -1,5 +1,5 @@
-const {Activity, Subject, Location, Tag, Relation, User} = require('../models');
-const {AppInfo, Codes, Utils, Constants} = require('../utils');
+const {Activity, Subject, Location, Tag, Relation, User, Message} = require('../models');
+const {AppInfo, Codes, Utils, Constants, Socket} = require('../utils');
 
 module.exports = class activity {
   constructor () {}
@@ -202,16 +202,16 @@ module.exports = class activity {
     //用户收藏/转发某activity
     //公开级别权限判断查询
     let {subid} = this.params;
-    let subject = yield Subject.findByIdOnExpose(subid, this.state.user.id, Activity.modelName);
-    if (subject) {
+    let findedSubject = yield Subject.findByIdOnExpose(subid, this.state.user.id, Activity.modelName);
+    if (findedSubject) {
       //判断是否已收藏过
-      let ref = yield Subject.findByRefObject(subject.refer_object, Activity.modelName, {creater: this.state.user.id});
+      let ref = yield Subject.findByRefObject(findedSubject.refer_object, Activity.modelName, {creater: this.state.user.id});
       if (ref && ref.length) {
         this.body = AppInfo.Msg("activity has favorited", Codes.Common.REPEAT_WRONG);
         return;
       }
 
-      subject = {
+      let subject = {
         creater: this.state.user.id,
         refer_type: subject.refer_type,
         refer_object: subject.refer_object,
@@ -221,6 +221,21 @@ module.exports = class activity {
       //更新用户的 favor_subjects
       yield User.updateIncDoc(this.state.user.id, {favor_subjects:1});
       let activity = yield Subject.findByIdTakeRef(subject.id, Activity.modelName);
+
+      let message = {
+        receiver: findedSubject.creater,
+        sender: this.state.user.id,
+        content_type: Constants.MessageContentType.SubjectFavorite,
+        title: Constants.MessageTitle.SubjectFavorite,
+        content: Constants.MessageContent.SubjectFavorite,
+        stuff:[
+          {key:'sender',text: this.state.user.nickname, value: this.state.user.id},
+          {key:'title',text: findedSubject.refer_object.title, value: findedSubject.id},
+        ]
+      };
+      yield Message.saveDoc(message);
+      Socket.sendMessage(message.receiver, message.content_type);
+
       this.body = AppInfo({activity});
     } else {
       this.body = AppInfo.Msg("id not found", Codes.Subject._ID_FOUND);

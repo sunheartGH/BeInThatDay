@@ -3,7 +3,7 @@
   <div class="title">
     <div class="ui buttons">
       <button class="ui labeled icon button" @click="process(-1)"><i class="left chevron icon"></i>上个月</button>
-      <button class="ui button"> {{calendar.month}} </button>
+      <button class="ui button" @click="curMonth"> {{calendar.month}} </button>
       <button class="ui right labeled icon button" @click="process(1)">下个月<i class="right chevron icon"></i> </button>
     </div>
   </div>
@@ -34,19 +34,23 @@ import utils from 'utils'
 import bus from 'bus'
 
 export default {
-  mounted() {
-    this.process();
-  },
   data() {
     return {
       calendar: {}
     }
+  },
+  mounted() {
+    this.process();
   },
   methods: {
     dayClick (date, title) {
       if (date && title) {
         bus.$emit('dayclick', date);
       }
+    },
+    curMonth() {
+      this.calendar.month = utils.curMonth();
+      this.process();
     },
     process(orient) {
       orient = orient || 0;
@@ -61,6 +65,10 @@ export default {
 
       if (this.oncity) {
         params.city = this.oncity;
+      }
+
+      if (this.userid) {
+        params.userid = this.userid;
       }
 
       this.$http.get("activitys/calendar",{
@@ -89,9 +97,12 @@ export default {
       this.calendar = calendar;
     }
   },
-  props: ["oncity","refresh"],
+  props: ["oncity","refresh","userid"],
   watch: {
     oncity() {
+      this.process();
+    },
+    userid() {
       this.process();
     },
     refresh(val, old) {
@@ -125,35 +136,69 @@ export default {
 }
 .week {
   margin: 3px;
-  height: 120px;
   clear: both;
   display: flex;
 }
 .day {
   flex: 1;
-  height: 120px;
   float: left;
   background-color: #fff;
   margin: 1px;
   position: relative;
   box-shadow: 0 1px 5px rgba(0, 0, 0, 0.15);
 }
-.day img {
-  height: 120px;
-  width: 100%;
+.daytitle {
+  bottom: 0px;
+  position: absolute;
+  color: white;
 }
+
+/*computer*/
+@media only screen and (min-width: 768px) {
+  .day {
+    height: 120px;
+  }
+  .week {
+    height: 120px;
+  }
+  .daytitle {
+    height: auto;
+    font-size: inherit;
+    overflow:inherit;
+    line-height: 18px;
+    background: linear-gradient(transparent,rgba(0,0,0,0.1) 20%,rgba(0,0,0,0.2) 35%,rgba(0,0,0,0.6) 65%,rgba(0,0,0,0.9));
+  }
+  .day img {
+    height: 120px;
+    width: 100%;
+  }
+}
+/*mobile*/
+@media only screen and (max-width: 768px){
+  .day {
+    height: 60px;
+  }
+  .week {
+    height: 60px;
+  }
+  .daytitle {
+    height: 28px;
+    font-size: 4px;
+    overflow: auto;
+    line-height: 12px;
+    background: linear-gradient(transparent,rgba(0,0,0,0.1) 18%);
+  }
+  .day img {
+    height: 60px;
+    width: 100%;
+  }
+}
+
 .daynum {
   top:0px;
   position: absolute;
   background-color: rgba(0,0,0,0.1);
   width: 20px;
-}
-.daytitle {
-  bottom: 0px;
-  position: absolute;
-  color: white;
-  height: auto;
-  background: linear-gradient(transparent,rgba(0,0,0,0.1) 20%,rgba(0,0,0,0.2) 35%,rgba(0,0,0,0.6) 65%,rgba(0,0,0,0.9));
 }
 .cur .daynum {
   color: #fff;

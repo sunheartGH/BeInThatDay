@@ -1,5 +1,5 @@
-const {Comment, Subject, Activity, User} = require('../models');
-const {AppInfo, Codes, Utils} = require('../utils');
+const {Comment, Subject, Activity, User, Message} = require('../models');
+const {AppInfo, Codes, Utils, Socket, Constants} = require('../utils');
 
 module.exports = class comment {
   constructor () {}
@@ -14,11 +14,35 @@ module.exports = class comment {
       creater: this.state.user.id,
       content
     }
+    let summary;
+    if (content.length > 24) {
+      summary = content.slice(0, 21);
+      summary += '...';
+    } else {
+      summary = content;
+    }
+    let underMessage;
+    let replyMessage;
     if (under_type == Subject.modelName || under_type == Activity.modelName) {
       let subject = yield Subject.findByIdOnExpose(under_object, this.state.user.id, Activity.modelName);
       if (subject) {
         comment.under_type = Subject.modelName;
         comment.under_object = subject.id.toString();
+
+        if (this.state.user.id.toString() != subject.creater.toString()) {
+          underMessage = {
+            receiver: subject.creater,
+            sender: this.state.user.id,
+            title: Constants.MessageTitle.UnderComment,
+            content_type: Constants.MessageContentType.UnderComment,
+            content: Constants.MessageContent.UnderComment,
+            stuff:[
+              {key:'sender',text: this.state.user.nickname, value: this.state.user.id},
+              {key:'title',text: subject.refer_object.title, value: subject.id},
+              {key:'content',text: summary, value: ''},
+            ]
+          };
+        }
       }
     }
     if (!comment.under_type) {
@@ -50,11 +74,45 @@ module.exports = class comment {
       }
       comment.reply_user = user.id;
       comment.reply_comment = replyComment.id;
+
+      let replySummary;
+      if (replyComment.content.length > 24) {
+        replySummary = replyComment.content.length.slice(0, 21);
+        replySummary += '...';
+      } else {
+        replySummary = replyComment.content.length;
+      }
+      replyMessage = {
+        receiver: user.id,
+        sender: this.state.user.id,
+        title: Constants.MessageTitle.ReplyComment,
+        content_type: Constants.MessageContentType.ReplyComment,
+        content: Constants.MessageContent.ReplyComment,
+        stuff:[
+          {key:'sender',text: this.state.user.nickname, value: this.state.user.id},
+          {key:'title',text: subject.refer_object.title, value: subject.id},
+          {key:'comment',text: replySummary, value: ''},
+          {key:'content',text: summary, value: ''},
+        ]
+      };
     }
     comment = yield Comment.saveDoc(comment);
+
+
+
     if (comment.under_type == Subject.modelName && comment.under_object) {
       yield Subject.updateIncDoc(comment.under_object, {comment_count: 1}); //更新 Subject 的评论次数
     }
+
+    if (underMessage) {
+      yield Message.saveDoc(underMessage);
+      Socket.sendMessage(underMessage.receiver, underMessage.content_type);
+    }
+    if (replyMessage) {
+      yield Message.saveDoc(replyMessage);
+      Socket.sendMessage(replyMessage.receiver, replyMessage.content_type);
+    }
+
     this.body = AppInfo({comment});
   }
 
@@ -69,6 +127,8 @@ module.exports = class comment {
     }
     let pageObj = Utils.parsePageTime(this.query);
     let comments = yield Comment.findByPageUnderObject(pageObj, under_type, under_object);
+    let count = yield Comment.countByPageUnderObject(pageObj, under_type, under_object);
+    count = count || 0;
     let page = pageObj.page;
     let size = 0;
     if (comments && comments.length) {
@@ -76,7 +136,7 @@ module.exports = class comment {
     } else {
       comments = [];
     }
-    this.body = AppInfo({page, size, comments});
+    this.body = AppInfo({page, size, count, comments});
   }
 
   //@route(get /comments/user/:uid)

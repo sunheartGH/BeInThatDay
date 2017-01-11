@@ -1,4 +1,4 @@
-const {AppInfo, Codes, Schemas, Constants} = require('../utils');
+const {AppInfo, Codes, Schemas, Constants, Captcha} = require('../utils');
 const {User} = require('../models');
 const validator = require('validator');
 
@@ -7,7 +7,15 @@ module.exports = class user {
 
   * newUser (next) {
     //注册新用户
-    let {nickname, username, email, phone, password} = this.request.body;
+    let {nickname, username, email, phone, password, captcha} = this.request.body;
+
+    //验证码验证
+    let captchaRes = yield Captcha.verifyCaptcha(captcha)
+    if (!captchaRes) {
+      this.body = AppInfo.Msg("captcha is wrong", Codes.Common.CAPTCHA_WRONG);
+      return;
+    }
+
     if (nickname) {
       if (typeof nickname != "string" || !Constants.nicknameRgx.test(nickname)) {
         this.body = AppInfo.Msg("nickname wrong format", Codes.User.NICKNAME_TYPE);

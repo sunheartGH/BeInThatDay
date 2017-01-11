@@ -7,6 +7,7 @@ module.exports = class token {
   //@route(post /token/auth)
   * newToken () {
     let {username, email, phone, password} = this.request.body;
+
     //根据账号查找用户
     let account= {username, email, phone};
     let user = yield User.findByAccount(account);

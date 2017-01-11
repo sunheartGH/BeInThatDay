@@ -21,6 +21,7 @@ exports.Common = {
   PAGETIME_FIRSTIME_WRONG: 364, //分页 firstime 参数格式/数据错误
 
   DATE_WRONG: 371, //日期数据错误
+  CAPTCHA_WRONG: 372, //验证码错误
 
   REPEAT_WRONG: 381, //数据重复错误，即数据不应该重复
 
@@ -30,6 +31,8 @@ exports.Common = {
   PARAM_TYPE: 501,
   PARAM_DATA: 601,
   PARAM_FOUND: 701,
+
+  SERVICE_LOGIC_ERROR: 999, //业务逻辑错误
 };
 
 const models = require('../models');

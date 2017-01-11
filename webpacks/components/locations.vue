@@ -1,11 +1,27 @@
 <template>
-<div class="ui category search locations">
-  <div class="ui left icon input">
-    <i class="delete link icon" v-if="selection" @click="deleteSelection"></i>
-    <i class="marker icon" v-else></i>
-    <input class="prompt" type="text" placeholder="Search locations..." v-model="locationSearch" @focusout="focusOut">
+<div class="locations">
+  <div class="mobileshow" @click="showLocal">
+    <i class="large marker inverted icon"></i>
   </div>
-  <div class="results"></div>
+  <div class="ui category search computershow">
+    <div class="ui left icon input">
+      <i class="delete link icon" v-if="selection" @click="deleteSelection"></i>
+      <i class="marker icon" v-else></i>
+      <input class="prompt" type="text" placeholder="Search locations..." v-model="locationSearch" @focusout="focusOut">
+    </div>
+    <div class="results"></div>
+  </div>
+
+  <div class="ui modal localed">
+    <div class="ui category search">
+      <div class="ui left icon input">
+        <i class="delete link icon" v-if="selection" @click="deleteSelection"></i>
+        <i class="marker icon" v-else></i>
+        <input class="prompt" type="text" placeholder="Search locations..." v-model="locationSearch" @focusout="focusOut">
+      </div>
+      <div class="results"></div>
+    </div>
+  </div>
 </div>
 </template>
 
@@ -29,7 +45,7 @@ export default {
     trickyInit() {
       let vm = this;
       function putCitys (results) {
-        $('.ui.category.search.locations').search({
+        $('.locations .ui.category.search.computershow').search({
           apiSettings: {
             response: {results},
             onResponse (res) {
@@ -59,6 +75,70 @@ export default {
           onSelect(location, response) {
             vm.locationSearch = location.city;
             vm.selection = location.city;
+            bus.$emit("locationchanged", location);
+          },
+          minCharacters: 2,
+          fields: {
+            categoryName: 'province',
+            title: 'city',
+            name: 'province',
+          },
+          searchDelay: 480,
+          type: 'category',
+        });
+      }
+      let localLocations = utils.getLocations();
+      if (localLocations) {
+        putCitys(localLocations);
+      } else {
+        this.commonLocations(function(locations){
+          let results = {}
+          locations.forEach((e, i, a) => {
+            if (e.province && !results[e.province]) {
+              results[e.province] = {province: e.province,results: []}
+            }
+            results[e.province].results.push(e);
+          })
+          utils.storeLocations(results);
+          putCitys(results);
+        })
+      }
+    },
+    showLocal() {
+      $('.ui.modal.localed').modal('show');
+      let vm = this;
+      function putCitys (results) {
+        $('.ui.modal.localed .ui.category.search').search({
+          apiSettings: {
+            response: {results},
+            onResponse (res) {
+              let reallyRes = {results:{}};
+              if (vm.locationSearch) {
+                let search = vm.locationSearch.trim();
+                if (search) {
+                  let keys = Object.keys(res.results);
+                  for (let h = 0; h < keys.length; h++) {
+                    let key = keys[h];
+                    let results = res.results[key].results;
+                    for (let i = 0; i < results.length; i++) {
+                      let city = results[i];
+                      if (city.city.includes(search) || city.province.includes(search)) {
+                        if (!reallyRes.results[city.province]) {
+                          reallyRes.results[city.province] = {province:city.province, results:[]}
+                        }
+                        reallyRes.results[city.province].results.push(city);
+                      }
+                    }
+                  }
+                }
+              }
+              return reallyRes;
+            },
+          },
+          onSelect(location, response) {
+            vm.locationSearch = location.city;
+            vm.selection = location.city;
+            $('.ui.modal.localed').modal('hide');
             bus.$emit("locationchanged", location);
           },
           minCharacters: 2,
@@ -120,12 +200,42 @@ export default {
 </script>
 
 <style>
-.ui.category.search.locations .results{
-  width: 20em;
+/*computer*/
+@media only screen and (min-width: 768px) {
+  .locations .mobileshow {
+    display: none;
+  }
+  .locations .ui.category.search.computershow .results{
+    width: 20em;
+  }
+  .locations .ui.category.search.computershow .results .category .result .content .title {
+    text-align: left;
+  }
 }
-.ui.category.search.tlocations .results .category .result .content .title {
-  text-align: left;
+/*mobile*/
+@media only screen and (max-width: 768px){
+  .locations .computershow {
+    display: none;
+  }
+  .locations .mobileshow {
+    width: 1.6em;
+    height: 2.4em;
+    padding-top: 0.4em;
+  }
+  .ui.modal.localed .ui.category.search {
+    width: 100%;
+  }
+  .ui.modal.localed .ui.category.search div.input {
+    width: 100%;
+  }
+  .ui.modal.localed .ui.category.search .results{
+    width: 20em;
+  }
+  .ui.modal.localed .ui.category.search .results .category .result .content .title {
+    text-align: left;
+  }
 }
+
 </style>
 
 

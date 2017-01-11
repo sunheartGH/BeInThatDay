@@ -4,6 +4,7 @@
   "main": "main.js",
   "scripts": {
     "dev": "webpack-dev-server --devtool eval --progress --colors --hot --content-base build --config webpack.config.dev.js",
+    "devbuild": "webpack --progress --hide-modules --config webpack.config.dev.js --devbuild",
     "build": "webpack --progress --hide-modules --config webpack.config.js"
   },
   "license": "ISC",
@@ -28,9 +29,11 @@
     "moment": "^2.17.1",
     "quill": "1.0.4",
     "semantic-ui": "^2.2.6",
+    "socket.io": "^1.7.2",
     "validator": "^5.7.0",
     "vue": "^2.1.3",
     "vue-resource": "^1.0.3",
-    "vue-router": "^2.1.1"
+    "vue-router": "^2.1.1",
+    "xss": "^0.3.3"
   }
 }

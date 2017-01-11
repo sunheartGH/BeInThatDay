@@ -35,6 +35,14 @@
           <label>Password</label>
           <input type="password" placeholder="password" v-model="password">
         </div>
+        <div class="field">
+          <label>Captcha</label>
+          <div class="ui action input">
+            <input type="text" placeholder="captcha" v-model="captchatext" maxlength='4'>
+            <img class='ui image' :src="captchaimg">
+            <button class="ui teal right button" @click="reloadCaptcha" :disabled="recaptime"> Reload <span v-if="recaptime">({{recaptime}})</span></button>
+          </div>
+        </div>
       </div>
     </div>
     <div class="actions">
@@ -62,6 +70,14 @@
           <label>Password</label>
           <input type="password" placeholder="password" v-model="password">
         </div>
+        <div class="field">
+          <label>Captcha</label>
+          <div class="ui action input">
+            <input type="text" placeholder="captcha" v-model="captchatext" maxlength='4'>
+            <img class='ui image' :src="captchaimg">
+            <button class="ui teal right button" @click="reloadCaptcha" :disabled="recaptime"> Reload <span v-if="recaptime">({{recaptime}})</span></button>
+          </div>
+        </div>
       </div>
     </div>
     <div class="actions">
@@ -84,6 +100,10 @@ export default {
       account: '',
       password: '',
       user: null,
+      captchaid: '',
+      captchatext: '',
+      captchaimg: '',
+      recaptime: false,
     }
   },
   mounted() {
@@ -104,10 +124,40 @@ export default {
       }
     },
     showLogin() {
+      this.captchatext = '';
+      this.captchaid = '';
+      this.captchaimg = '';
       $('.ui.modal.login').modal('show');
+      this.getCaptcha()
+    },
+    getCaptcha () {
+      this.$http.get("captcha").then((res) => {
+        if (utils.isResOk(res)) {
+          this.captchaimg = res.body.result.captcha.img;
+          this.captchaid = res.body.result.captcha.id;
+        }
+      }).catch((err) => {
+        console.log(err);
+      });
+    },
+    reloadCaptcha () {
+      this.getCaptcha();
+      let rtime = 3;
+      this.recaptime = rtime;
+      let recap = setInterval(() => {
+        this.recaptime--
+      }, 1000);
+      setTimeout(() => {
+        this.recaptime = false;
+        clearInterval(recap)
+      }, rtime * 1000);
     },
     showSignup() {
+      this.captchatext = '';
+      this.captchaid = '';
+      this.captchaimg = '';
       $('.ui.modal.signup').modal('show');
+      this.getCaptcha()
     },
     hideLogin() {
       $('.ui.modal.login').modal('hide');
@@ -121,9 +171,17 @@ export default {
          alert("has logined");
          return
         }
+        if (!this.captchatext || !this.captchaid) {
+          alert("should input captcha");
+          return
+        }
         //没有toekn,获取token
         let body = {
           password: this.password,
+          captcha: {
+            id: this.captchaid,
+            text: this.captchatext,
+          }
         }
         if (validator.isEmail(this.account)) {
           body.email = this.account;
@@ -155,10 +213,18 @@ export default {
          alert("has logined");
          return
         }
+        if (!this.captchatext || !this.captchaid) {
+          alert("should input captcha");
+          return
+        }
         //没有toekn,获取token
         let body = {
           password: this.password,
           nickname: this.nickname,
+          captcha: {
+            id: this.captchaid,
+            text: this.captchatext,
+          }
         }
         if (validator.isEmail(this.account)) {
           body.email = this.account;

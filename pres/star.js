@@ -1,4 +1,4 @@
-const {Star} = require('../models');
+const {Star, Subject, Comment} = require('../models');
 const {AppInfo, Codes, Schemas} = require('../utils');
 
 module.exports = class star {
@@ -20,6 +20,10 @@ module.exports = class star {
     }
     if (target_user == this.state.user.id.toString()) {
       this.body = AppInfo.Msg("self operate wrong", Codes.Common.USER_SELF_WRONG);
+      return;
+    }
+    if (target_type != Subject.modelName && target_type != Comment.modelName) {
+      this.body = AppInfo.Msg("target_type is not support", Codes.Star.TARGET_TYPE_DATA);
       return;
     }
     yield next;

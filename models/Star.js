@@ -16,11 +16,12 @@ let DocSchema = new Schema({
 let method = {
   * findByTarget (creater, tobject, ttype) {
     if (creater && tobject && ttype) {
-      return yield this.findOne({
+      let result = yield this.findOne({
         creater:  mongoose.Types.ObjectId(creater.toString()),
         target_object:  mongoose.Types.ObjectId(tobject.toString()),
         target_type: ttype
       })
+      return result;
     }
   }
 };

@@ -9,6 +9,10 @@ var Utils = {
       } else {
         console.log(res.body.meta);
         alert(res.body.meta.message);
+        if (res.body.meta.code == 304) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+        }
         return false;
       }
     } else {
@@ -180,6 +184,11 @@ var Utils = {
       datas: datas,
       month: month,
     }
+  },
+  curMonth() {
+    let month = new Date().toLocaleDateString().replace('/', '-');
+    month = month.slice(0, month.lastIndexOf('/'));
+    return;
   },
   UserGender: {
     woman: "woman",

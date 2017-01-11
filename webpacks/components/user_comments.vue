@@ -15,6 +15,9 @@
       </div>
     </div>
   </div>
+  <div align="center" v-if="loadmore">
+    <button class="ui button large loadmore" @click="showComments">Load More</button>
+  </div>
 </div>
 </template>
 
@@ -27,35 +30,58 @@ export default {
   data() {
     return {
       comments: [],
+      page: 0,
+      size: 10,
+      loadmore: true,
     }
   },
   mounted() {
-    this.showComments(this.userid);
+    this.showComments();
   },
   methods: {
-    showComments(uid) {
+    showComments() {
+      let uid = this.userid;
+      let load = $("#ucomments .loadmore");
       if (uid) {
         let params = {
-          under_type: "Subject"
+          under_type: "Subject",
+          page: this.page+1,
+          size: this.size,
         };
         utils.useToken(params);
+        //添加loading图
+        load.toggleClass("loading")
+        load.attr("disabled","disabled");
         this.$http.get("comments/user/"+uid,{
           params: params
         }).then((res) => {
           if (utils.isResOk(res)) {
             let comments = res.body.result.comments;
+            this.page = res.body.result.page;
+            this.loadmore = res.body.result.size < this.size? false : true;
+
             if (comments && comments.length) {
               comments.forEach((e,i,a) => {
                 a[i].created_at = moment(e.created_at).format("YYYY-MM-DD HH:mm");
               });
-              this.comments = comments;
+              if (this.page==1) {
+                this.comments = comments;
+              } else {
+                this.comments = this.comments.concat(comments);
+              }
             } else {
-              this.comments = [];
+              if (this.page==1) {
+                this.comments = [];
+              }
             }
           }
         }).catch((err) => {
           console.log(err);
-        });
+        }).finally(()=>{
+          //移除loading图
+          load.toggleClass("loading")
+          load.removeAttr("disabled")
+        })
       }
     },
     userClick(uid) {
@@ -71,8 +97,9 @@ export default {
   },
   props: ['userid'],
   watch: {
-    userid(uid) {
-      this.showComments(uid);
+    userid() {
+      this.page = 0;
+      this.showComments();
     },
   }
 }
@@ -81,5 +108,9 @@ export default {
 <style>
 #ucomments.comments {
   max-width: 100%;
+}
+#ucomments .loadmore {
+  width: 80%;
+  margin-top: 1.4em;
 }
 </style>

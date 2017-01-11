@@ -115,7 +115,7 @@ export default {
           utils.useToken(params);
 
           //添加loading图
-          $(".ui.form.segment.treatuser").addClass("loading");
+          $(".ui.form.segment.treatuser").toggleClass("loading");
           this.$http.put("user", body, {params}).then((res) => {
             if (utils.isResOk(res)) {
               let result = res.body.result;
@@ -128,15 +128,12 @@ export default {
                 alert('no user field changed');
               }
             }
-
-            //移除loading图
-            $(".ui.form.segment.treatuser").removeClass("loading");
           }).catch((err) => {
             console.log(err);
-
+          }).finally(()=>{
             //移除loading图
-            $(".ui.form.segment.treatuser").removeClass("loading");
-          });
+            $(".ui.form.segment.treatuser").toggleClass("loading");
+          })
         }
       } else {
         alert("Invalid Failed")

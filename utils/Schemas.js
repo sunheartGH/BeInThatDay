@@ -1,7 +1,8 @@
 const Codes = require('./Codes');
 const models = require('../models');
 const AppInfo = require('./AppInfo.js');
-const ObjectId = require('mongoose').Types.ObjectId;
+const mongoose = require('mongoose');
+const ObjectId = mongoose.Types.ObjectId;
 
 function str2arr(str) {
   if (Object.prototype.toString.call(str) == "[object String]") {
@@ -106,3 +107,10 @@ function ObjectIdValid(value) {
 }
 
 exports.ObjectIdValid = ObjectIdValid;
+
+function GenerateId(){
+  let id = mongoose.Types.ObjectId();
+  return id.toString();
+}
+
+exports.GenerateId = GenerateId;

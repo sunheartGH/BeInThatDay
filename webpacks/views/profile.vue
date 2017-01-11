@@ -1,7 +1,7 @@
 <template>
 <div>
   <app-user :userid='userId' :refresh="userRefresh"></app-user>
-  <app-uinfos :userid='userId'></app-uinfos>
+  <app-uinfos :userid='userId' :show="infoshow"></app-uinfos>
 </div>
 </template>
 
@@ -16,6 +16,7 @@ export default {
     return {
       userId: null,
       userRefresh: 0,
+      infoshow: "activitys"
     }
   },
   activated() {
@@ -27,6 +28,9 @@ export default {
     showProfile() {
       if (this.$route.params.userId) {
         this.userId = this.$route.params.userId;
+      }
+      if (this.$route.query.infoshow) {
+        this.infoshow = this.$route.query.infoshow;
       }
     }
   },

@@ -1,5 +1,5 @@
-const {Relation, User} = require('../models');
-const {AppInfo, Codes, Constants} = require('../utils');
+const {Relation, User, Message} = require('../models');
+const {AppInfo, Codes, Constants, Socket} = require('../utils');
 
 module.exports = class relation {
   constructor () {}
@@ -109,7 +109,56 @@ module.exports = class relation {
       yield User.updateIncDoc(relation.relate_user, {friend_count: fc});
     }
 
-    //TODO 向对方用户发送消息提醒
+    if (relation) {
+      if (relation.relate_type == Constants.RelateType.Follow
+        && relation.relate_state == Constants.RelateState.Unilateral) {
+
+          let followMessage = {
+            receiver: relation.relate_user,
+            sender: relation.creater,
+            title: Constants.MessageTitle.FollowRelation,
+            content_type: Constants.MessageContentType.FollowRelation,
+            content: Constants.MessageContent.FollowRelation,
+            stuff:[
+              {key:'sender',text: this.state.user.nickname, value: this.state.user.id},
+            ]
+          };
+          yield Message.saveDoc(followMessage);
+          Socket.sendMessage(followMessage.receiver, followMessage.content_type);
+        }
+        if (relation.relate_type == Constants.RelateType.Friend
+          && relation.relate_state == Constants.RelateState.Unilateral) {
+
+          let friendApplyMessage = {
+            receiver: relation.relate_user,
+            sender: relation.creater,
+            title: Constants.MessageTitle.FriendRelationApply,
+            content_type: Constants.MessageContentType.FriendRelationApply,
+            content: Constants.MessageContent.FriendRelationApply,
+            stuff:[
+              {key:'sender',text: this.state.user.nickname, value: this.state.user.id},
+            ]
+          };
+          yield Message.saveDoc(friendApplyMessage);
+          Socket.sendMessage(friendApplyMessage.receiver, friendApplyMessage.content_type);
+        }
+        if (relation.relate_type == Constants.RelateType.Friend
+          && relation.relate_state == Constants.RelateState.Bilateral) {
+
+          let friendAcceptMessage = {
+            receiver: relation.relate_user,
+            sender: relation.creater,
+            title: Constants.MessageTitle.FriendRelationAccept,
+            content_type: Constants.MessageContentType.FriendRelationAccept,
+            content: Constants.MessageContent.FriendRelationAccept,
+            stuff:[
+              {key:'sender',text: this.state.user.nickname, value: this.state.user.id},
+            ]
+          };
+          yield Message.saveDoc(friendAcceptMessage);
+          Socket.sendMessage(friendAcceptMessage.receiver, friendAcceptMessage.content_type);
+        }
+    }
 
     this.body = AppInfo({relation});
   }

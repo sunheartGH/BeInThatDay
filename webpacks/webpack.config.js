@@ -48,8 +48,12 @@ module.exports = {
       { from: 'node_modules/quill/dist/quill.core.css', to: 'libs/quill/quill.core.css' },
       { from: 'node_modules/quill/dist/quill.snow.css', to: 'libs/quill/quill.snow.css' },
       { from: 'node_modules/moment/moment.js', to: 'libs/moment/moment.js' },
+      { from: 'node_modules/socket.io-client/dist/socket.io.js', to: 'libs/socket.io/socket.io.js' },
+      { from: 'node_modules/socket.io-client/dist/socket.io.js.map', to: 'libs/socket.io/socket.io.js.map' },
+      { from: 'node_modules/xss/dist/xss.js', to: 'libs/xss/xss.js' },
       { from: 'utils/utils.js', to: 'libs/utils/utils.js' },
       { from: 'index.html', to: 'index.html' },
+      { from: 'assets', to: 'assets' },
     ]),
   ],
   externals: {
@@ -59,5 +63,9 @@ module.exports = {
     "bus": "Bus",
     "validator": "validator",
     "quill": "Quill",
+    "validator": "validator",
+    "moment": "moment",
+    "xss": "filterXSS",
+    "io": "io",
   }
 }

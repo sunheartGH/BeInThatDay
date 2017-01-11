@@ -14,7 +14,8 @@ let DocSchema = new Schema({
                                                                                 //关系为好友：经过对方同意后双方的记录状态都为双方的
                                                                                 //取消关注/好友关系：状态为 Broken 断开的
   created_at: {type: Date, default: Date.now},                                  //创建日期
-  updated_at: {type: Date, default: Date.now}                                   //更新日期
+  updated_at: {type: Date, default: Date.now},                                  //更新日期
+  expound: String,                                                              //关系阐述
 });
 
 let method = {

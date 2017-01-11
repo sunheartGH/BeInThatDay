@@ -1,5 +1,5 @@
 <template>
-<div class="ui massive relaxed divided animated selection list">
+<div id="urelations" class="ui massive relaxed divided animated selection list">
   <div class="item" v-for='user in users' @click='userClick(user.id)'>
     <div class="right floated content">
       <div class="ui button" v-if="!user.friended && addfriend">Add Friend</div>
@@ -18,9 +18,12 @@
         <p>{{user.depict}}</p>
       </div>
       <div class="extra">
-        <!-- <component :is="showTags" :tags="activity.refer_object.tags"></component> -->
+        <app-tags :tags="user.tags" :class="'mini'"></app-tags>
       </div>
     </div>
+  </div>
+  <div align="center" v-if="loadmore">
+    <button class="ui button large loadmore" @click="showUsers">Load More</button>
   </div>
 </div>
 </template>
@@ -28,6 +31,7 @@
 <script>
 import utils from 'utils'
 import bus from 'bus'
+import Tags from './tags.vue'
 
 export default {
   data() {
@@ -37,13 +41,18 @@ export default {
       removefriend: false,
       addfollow: false,
       removefollow: false,
+      page: 0,
+      size: 10,
+      loadmore: true,
     }
   },
   mounted() {
-    this.showUsers(this.userid);
+    this.showUsers();
   },
   methods: {
-    showUsers(uid) {
+    showUsers() {
+      let uid = this.userid;
+      let load = $("#urelations .loadmore");
       if (uid) {
         let rtype = this.rtype;
         if (rtype == "friend") {
@@ -62,22 +71,41 @@ export default {
           alert("wrong relation!")
           return;
         }
-        let params = {};
+        let params = {
+          page: this.page+1,
+          size: this.size,
+        };
         utils.useToken(params);
+        //添加loading图
+        load.toggleClass("loading")
+        load.attr("disabled","disabled");
         this.$http.get("users/"+uid+"/"+rtype,{
           params: params
         }).then((res) => {
           if (utils.isResOk(res)) {
             let users = res.body.result.users;
+            this.page = res.body.result.page;
+            this.loadmore = res.body.result.size < this.size? false : true;
+
             if (users && users.length) {
-              this.users = users;
+              if (this.page==1) {
+                this.users = users;
+              } else {
+                this.users = this.users.concat(users);
+              }
             } else {
-              this.users = [];
+              if (this.page==1) {
+                this.users = [];
+              }
             }
           }
         }).catch((err) => {
           console.log(err);
-        });
+        }).finally(()=>{
+          //移除loading图
+          load.toggleClass("loading")
+          load.removeAttr("disabled")
+        })
       }
     },
     userClick(uid) {
@@ -88,9 +116,18 @@ export default {
   },
   props: ['userid','rtype'],
   watch: {
-    userid(uid) {
-      this.showUsers(uid);
+    userid() {
+      this.page = 0;
+      this.loadmore = true;
+      this.showUsers();
     },
+    rtype() {
+      this.page = 0;
+      this.loadmore = true;
+    }
+  },
+  components: {
+    "app-tags":Tags
   }
 }
 </script>
@@ -99,4 +136,8 @@ export default {
 /*.item .content .header .metadata {
   color: rgba(0, 0, 0, 0.4);
 }*/
+#urelations .loadmore {
+  width: 80%;
+  margin-top: 1.4em;
+}
 </style>

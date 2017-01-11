@@ -2,6 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1">
     <title>beinthatday</title>
     <link rel="stylesheet" type="text/css" href="/libs/semantic/semantic.css">
     <link href="/libs/quill/quill.core.css" rel="stylesheet">
@@ -10,6 +11,7 @@
     <script src="/libs/vue/vue-resource.js" charset="utf-8"></script>
     <script src="/libs/vue/vue-router.js" charset="utf-8"></script>
     <script src="/libs/validator/validator.js" charset="utf-8"></script>
+    <script src="/libs/moment/moment.js" charset="utf-8"></script>
     <script src="/libs/utils/utils.js" charset="utf-8"></script>
     <script type="text/javascript">
       var Bus = new Vue();
@@ -18,12 +20,156 @@
     <script src="/libs/semantic/semantic.js"></script>
     <script src="/libs/quill/quill.core.js"></script>
     <script src="/libs/quill/quill.js"></script>
+    <script src="/libs/xss/xss.js"></script>
+    <script src="/libs/socket.io/socket.io.js"></script>
+    <style type="text/css">
+      img.ui.image:not([src]){
+        content: url('/assets/default_avatar.png');
+      }
+      .avatar img:not([src]){
+        content: url('/assets/default_avatar.png');
+      }
+      html,body {
+        height: 100%;
+      }
+      #app {
+        min-height: 100%;
+        position:relative;
+      }
+      .upper {
+        border-radius:0px;
+        box-shadow: 0 1px 5px rgba(0, 0, 0, 0.15);
+        padding: 0px;
+        border: 0;
+        height: 2.7em;
+        margin-bottom: 1em;
+      }
+      .container {
+        padding-bottom: 3em;
+      }
+      .footer {
+        color: #909090;
+        position: absolute;
+        height: 3em;
+        width: 100%;
+        text-align: center;
+        padding-top: 1em;
+        left: 0;
+        bottom: 0;
+      }
+      .upper {
+        background-color: #2185D0;
+      }
+      .upper .indextreat {
+        border-radius:0px;
+        height: 100%;
+      }
+      .upper .indexright {
+        position: absolute;
+        right: 0;
+        top: 0;
+        z-index: 2;
+      }
+      .upper .indexlogin {
+        padding: 0px 12px 0px 0px;
+        color: #fff;
+        float: right;
+      }
+      .upper .indexmessage {
+        padding: 10px 10px 0px 0px;
+        float: right;
+        color: #fff;
+        height: 2.7em;
+      }
+      .upper .ui.button.homeicon {
+        padding: 8px 0px 0px 20px;
+        position: absolute;
+        left: 0;
+        top: 0;
+        z-index: 2;
+        height: 2.7em;
+        border-radius: 0px;
+      }
+      /*computer*/
+      @media only screen and (min-width: 768px) {
+        .indextreat.bottomed {
+          display: none !important;
+        }
+        .upper .indexsearch.computershow {
+          display: flex;
+          padding: 0px 0px 0px 0px;
+          float: left;
+          color: #fff;
+          height: 2.7em;
+        }
+        .upper .indexsearch.mobileshow {
+          display: none;
+        }
+        .upper .ui.button.homeicon {
+          width: 8em;
+        }
+      }
+      /*mobile*/
+      @media only screen and (max-width: 768px){
+        .upper .indexsearch.computershow {
+          display: none;
+        }
+        .upper .indexsearch.mobileshow {
+          display: inline;;
+          float: left;
+          height: 2.7em;
+          width: 2.7em;
+          padding: 0.6em 0.4em 0em 0em;
+        }
+        .upper .indextreat {
+          display: none !important;
+        }
+        .indextreat.bottomed {
+          display: block;
+          border-radius:0px;
+          position:fixed;;
+          bottom:0;
+          left:0;
+          width: 100%;
+        }
+        .indextreat.bottomed div {
+          border-radius:0px;
+        }
+        .upper .ui.button.homeicon {
+          width: 4.8em;
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="app">
-      <keep-alive>
-        <router-view></router-view>
-      </keep-alive>
+      <div class="upper">
+        <div class="ui primary animated fade button homeicon"  @click="goHome">
+          <div class="visible content"><i class="home large icon"></i></div>
+          <div class="hidden content">Home</div>
+        </div>
+        <app-treat  class="indextreat fluid"></app-treat>
+        <div class="indexright">
+          <i class="search icon inverted indexsearch mobileshow" @click="goSearch"></i>
+          <div class="ui left icon input transparent inverted indexsearch computershow" @click="goSearch">
+            <i class="search icon"></i>
+            <input placeholder="Search Activitys..." readonly="readonly">
+          </div>
+          <app-login  class="indexlogin"></app-login>
+          <app-message class="indexmessage"></app-message>
+        </div>
+      </div>
+      <div class="container">
+        <keep-alive>
+          <router-view :refresh="refresh"></router-view>
+        </keep-alive>
+      </div>
+      <div class="footer">
+        🎊 welcome! 🎉
+      </div>
+      <div class="indextreat bottomed">
+        <app-treat  class="fluid"></app-treat>
+      </div>
     </div>
     <script src="main.js" charset="utf-8"></script>
   </body>
